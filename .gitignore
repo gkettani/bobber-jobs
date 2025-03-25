@@ -1,0 +1,4 @@
+cmd/legacy/*
+infra/*
+.env
+Makefile
