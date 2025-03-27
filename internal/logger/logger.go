@@ -3,24 +3,30 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"strings"
 )
 
-// var logger *slog.Logger = slog.New(slog.NewJSONHandler(
-// 	func() *os.File {
-// 		f, err := os.OpenFile("file.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 		return f
-// 	}(),
-// 	&slog.HandlerOptions{
-// 		Level: slog.LevelDebug,
-// 	}))
+func getLogLevel() slog.Level {
+	levelStr := strings.ToUpper(os.Getenv("LOG_LEVEL"))
+
+	switch levelStr {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "INFO":
+		return slog.LevelInfo
+	case "WARN":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
 
 var logger *slog.Logger = slog.New(slog.NewJSONHandler(
 	os.Stdout,
 	&slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: getLogLevel(),
 	},
 ))
 

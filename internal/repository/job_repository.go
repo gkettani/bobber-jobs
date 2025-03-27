@@ -12,13 +12,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TODO:
-// - Add metrics
-// - Add tracing
-// - Add logging
-// - Extract generic things like transactions, batching, etc.
-
-// JobRepository defines the interface for job repository operations
 type JobRepository interface {
 	Insert(ctx context.Context, job *models.Job) error
 	Upsert(ctx context.Context, job *models.Job) error
@@ -26,13 +19,11 @@ type JobRepository interface {
 	FindByID(ctx context.Context, id int64) (*models.Job, error)
 }
 
-// jobRepository implements JobRepository for PostgreSQL
 type jobRepository struct {
 	db        *sqlx.DB
 	batchSize int
 }
 
-// NewJobRepository creates a new PostgreSQL job repository
 func NewJobRepository(client *db.DBClient, batchSize int) *jobRepository {
 	if batchSize <= 0 {
 		batchSize = 1000 // Default batch size
@@ -44,7 +35,6 @@ func NewJobRepository(client *db.DBClient, batchSize int) *jobRepository {
 	}
 }
 
-// WithTransaction executes the given function within a transaction
 func (r *jobRepository) WithTransaction(ctx context.Context, fn func(ctx context.Context, tx *sqlx.Tx) error) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {

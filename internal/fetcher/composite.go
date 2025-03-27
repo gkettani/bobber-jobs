@@ -18,6 +18,7 @@ func NewCompositeFetcher(fetchers ...Fetcher) *CompositeFetcher {
 func (f *CompositeFetcher) Fetch(jobsChan chan<- *models.JobListing) error {
 	logger.Info("Fetching job listings from all fetchers")
 	for _, fetcher := range f.fetchers {
+		logger.Info(fmt.Sprintf("Fetching job listings from %s", fetcher.CompanyName()))
 		jobListings, err := fetcher.Fetch()
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error fetching job listings from %s: %s", fetcher.CompanyName(), err))

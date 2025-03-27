@@ -26,7 +26,7 @@ func NewSitemapStrategy(baseFetcher *BaseFetcher) *SitemapStrategy {
 }
 
 func (s *SitemapStrategy) FetchJobs(sourceURL string, extractor ExtractorFunc) ([]*models.JobListing, error) {
-	content, err := s.fetchContent(sourceURL)
+	content, err := s.FetchContent(sourceURL)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sitemap content: %w", err)
 	}
@@ -67,7 +67,7 @@ func NewHTMLStrategy(baseFetcher *BaseFetcher, linkSelector string) *HTMLStrateg
 }
 
 func (s *HTMLStrategy) FetchJobs(sourceURL string, extractor ExtractorFunc) ([]*models.JobListing, error) {
-	doc, err := s.fetchHTML(sourceURL)
+	doc, err := s.FetchHTML(sourceURL)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching HTML content: %w", err)
 	}

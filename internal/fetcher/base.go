@@ -24,7 +24,7 @@ func NewBaseFetcher() *BaseFetcher {
 }
 
 // FetchContent fetches raw content from a URL
-func (f *BaseFetcher) fetchContent(url string) ([]byte, error) {
+func (f *BaseFetcher) FetchContent(url string) ([]byte, error) {
 	resp, err := f.httpClient.Get(url)
 	if err != nil {
 		return nil, err
@@ -34,8 +34,8 @@ func (f *BaseFetcher) fetchContent(url string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-func (f *BaseFetcher) fetchHTML(url string) (*goquery.Document, error) {
-	content, err := f.fetchContent(url)
+func (f *BaseFetcher) FetchHTML(url string) (*goquery.Document, error) {
+	content, err := f.FetchContent(url)
 	if err != nil {
 		return nil, err
 	}

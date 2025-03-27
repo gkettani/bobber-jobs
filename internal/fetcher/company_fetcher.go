@@ -1,9 +1,6 @@
 package fetcher
 
 import (
-	"fmt"
-
-	"github.com/gkettani/bobber-the-swe/internal/logger"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 )
 
@@ -31,7 +28,6 @@ func NewCompanyFetcher(
 
 // Fetch implements the Fetcher interface
 func (f *CompanyFetcher) Fetch() ([]*models.JobListing, error) {
-	logger.Info(fmt.Sprintf("Fetching job listings from %s", f.companyName))
 	return f.strategy.FetchJobs(f.sourceURL, f.extractorFunc)
 }
 
