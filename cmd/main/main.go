@@ -39,7 +39,7 @@ func main() {
 	go func() {
 		for {
 			compositeFetcher.Fetch(jobsChan)
-			// sleep for 10 seconds
+			// sleep for 1 minute
 			time.Sleep(1 * time.Minute)
 		}
 	}()
