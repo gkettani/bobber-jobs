@@ -6,12 +6,12 @@ import (
 
 	"github.com/gkettani/bobber-the-swe/internal/logger"
 	"github.com/gkettani/bobber-the-swe/internal/metrics"
-	"github.com/gkettani/bobber-the-swe/internal/models"
+	"github.com/gkettani/bobber-the-swe/internal/queue"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type CompositeFetcherMetrics struct {
-	fetchDuration *prometheus.HistogramVec
+	fetchDuration *prometheus.GaugeVec
 }
 
 type CompositeFetcher struct {
@@ -20,7 +20,7 @@ type CompositeFetcher struct {
 }
 
 func NewCompositeFetcher(fetchers ...Fetcher) *CompositeFetcher {
-	fetchDuration := metrics.GetManager().CreateHistogramVec("fetcher_fetch_duration_seconds", "Duration of job listing fetch in seconds", []float64{0.1, 0.5, 1, 2, 5, 10}, []string{"fetcher"})
+	fetchDuration := metrics.GetManager().CreateGaugeVec("fetcher_fetch_duration_seconds", "Duration of job listing fetch in seconds", []string{"fetcher"})
 
 	return &CompositeFetcher{
 		fetchers: fetchers,
@@ -30,11 +30,11 @@ func NewCompositeFetcher(fetchers ...Fetcher) *CompositeFetcher {
 	}
 }
 
-func (f *CompositeFetcher) Fetch(jobsChan chan<- *models.JobListing) error {
+func (f *CompositeFetcher) Fetch(jobsQueue *queue.JobQueue) error {
 	start := time.Now()
 
 	defer func() {
-		f.fetchDuration.WithLabelValues("composite").Observe(time.Since(start).Seconds())
+		f.fetchDuration.WithLabelValues("composite").Set(time.Since(start).Seconds())
 	}()
 
 	logger.Info("Fetching job listings from all fetchers")
@@ -46,15 +46,15 @@ func (f *CompositeFetcher) Fetch(jobsChan chan<- *models.JobListing) error {
 		jobListings, err := fetcher.Fetch()
 		if err != nil {
 			logger.Error(fmt.Sprintf("Error fetching job listings from %s: %s", fetcher.CompanyName(), err))
-			return err
+			continue
 		}
 
 		logger.Info(fmt.Sprintf("Found %d job listings from %s", len(jobListings), fetcher.CompanyName()))
 		for _, jobListing := range jobListings {
-			jobsChan <- jobListing
+			jobsQueue.Enqueue(jobListing)
 		}
 
-		f.fetchDuration.WithLabelValues(string(fetcher.CompanyName())).Observe(time.Since(fetcherStart).Seconds())
+		f.fetchDuration.WithLabelValues(string(fetcher.CompanyName())).Set(time.Since(fetcherStart).Seconds())
 	}
 	return nil
 }
