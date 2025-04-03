@@ -30,6 +30,7 @@ const (
 	CompanyNameEtsy       CompanyName = "Etsy"
 	CompanyNameAirbnb     CompanyName = "Airbnb"
 	CompanyNameStripe     CompanyName = "Stripe"
+	CompanyNameMastercard CompanyName = "Mastercard"
 )
 
 // ExtractorFunc is a function type for extracting external IDs from URLs
