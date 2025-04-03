@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gkettani/bobber-the-swe/internal/db"
@@ -10,6 +11,7 @@ import (
 	"github.com/gkettani/bobber-the-swe/internal/fetcher/companies"
 	"github.com/gkettani/bobber-the-swe/internal/logger"
 	"github.com/gkettani/bobber-the-swe/internal/metrics"
+	"github.com/gkettani/bobber-the-swe/internal/models"
 	"github.com/gkettani/bobber-the-swe/internal/queue"
 	"github.com/gkettani/bobber-the-swe/internal/repository"
 	"github.com/gkettani/bobber-the-swe/internal/scraper"
@@ -36,13 +38,16 @@ func main() {
 
 	jobRepository := repository.NewJobRepository(db.GetDBClient(), 100)
 
+	// Create a job processor that handles batch processing
+	jobProcessor := NewJobProcessor(jobRepository, 50, 5*time.Second)
+
 	jobsQueue := queue.NewJobQueue()
 
 	go func() {
 		for {
 			compositeFetcher.Fetch(jobsQueue)
 			// sleep for 1 minute
-			time.Sleep(1 * time.Minute)
+			time.Sleep(10 * time.Minute)
 		}
 	}()
 
@@ -72,13 +77,75 @@ func main() {
 
 			logger.Debug(fmt.Sprintf("Scraped job: %v", job))
 
-			err = jobRepository.Upsert(context.Background(), job)
-			if err != nil {
-				logger.Error(fmt.Sprintf("Error upserting job: %v", err))
-				continue
-			}
+			jobProcessor.Add(job)
 		}
 	}()
 
 	select {}
+}
+
+// JobProcessor handles batch processing of jobs
+type JobProcessor struct {
+	repository    repository.JobRepository
+	batchSize     int
+	flushInterval time.Duration
+	jobs          []*models.Job
+	mu            sync.Mutex
+	timer         *time.Timer
+}
+
+// NewJobProcessor creates a new job processor
+func NewJobProcessor(repository repository.JobRepository, batchSize int, flushInterval time.Duration) *JobProcessor {
+	jp := &JobProcessor{
+		repository:    repository,
+		batchSize:     batchSize,
+		flushInterval: flushInterval,
+		jobs:          make([]*models.Job, 0, batchSize),
+	}
+
+	// Start timer for periodic flushing
+	jp.timer = time.AfterFunc(jp.flushInterval, jp.timerFlush)
+
+	return jp
+}
+
+// Add adds a job to the batch and flushes if batch is full
+func (jp *JobProcessor) Add(job *models.Job) {
+	jp.mu.Lock()
+	defer jp.mu.Unlock()
+
+	jp.jobs = append(jp.jobs, job)
+
+	if len(jp.jobs) >= jp.batchSize {
+		logger.Debug(fmt.Sprintf("Reached batch size of %d after %f seconds, flushing", jp.batchSize, jp.flushInterval.Seconds()))
+		jp.flush()
+	}
+}
+
+// timerFlush is called when the timer expires
+func (jp *JobProcessor) timerFlush() {
+	jp.mu.Lock()
+	defer jp.mu.Unlock()
+
+	logger.Debug(fmt.Sprintf("Flushing %d jobs", len(jp.jobs)))
+	jp.flush()
+	jp.timer.Reset(jp.flushInterval)
+}
+
+// flush sends all jobs to repository
+func (jp *JobProcessor) flush() {
+	if len(jp.jobs) == 0 {
+		return
+	}
+
+	ctx := context.Background()
+	err := jp.repository.BulkInsert(ctx, jp.jobs)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error batch upserting jobs: %v", err))
+	} else {
+		logger.Debug(fmt.Sprintf("Batch upserted %d jobs", len(jp.jobs)))
+	}
+
+	// Clear the batch
+	jp.jobs = make([]*models.Job, 0, jp.batchSize)
 }

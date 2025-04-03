@@ -139,7 +139,7 @@ func (r *jobRepository) BulkInsert(ctx context.Context, jobs []*models.Job) erro
 
 			for j, job := range batch {
 				// Calculate placeholder position
-				pos := j * 8
+				pos := j * 7
 				placeholders[j] = fmt.Sprintf(
 					"($%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 					pos+1, pos+2, pos+3, pos+4, pos+5, pos+6, pos+7,
@@ -160,7 +160,12 @@ func (r *jobRepository) BulkInsert(ctx context.Context, jobs []*models.Job) erro
 				INSERT INTO jobs (
 					title, description, company_name, location, url, external_id, hash
 				) VALUES %s
-				ON CONFLICT DO NOTHING
+				ON CONFLICT (external_id) DO UPDATE 
+				SET
+					last_seen_at = NOW(),
+					description = EXCLUDED.description,
+					hash = EXCLUDED.hash
+				WHERE jobs.hash <> EXCLUDED.hash
 				RETURNING id`, strings.Join(placeholders, ","))
 
 			rows, err := tx.QueryxContext(ctx, query, values...)
