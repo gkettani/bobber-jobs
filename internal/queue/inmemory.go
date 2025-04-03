@@ -3,19 +3,24 @@ package queue
 import (
 	"sync"
 
+	"github.com/gkettani/bobber-the-swe/internal/metrics"
 	"github.com/gkettani/bobber-the-swe/internal/models"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // JobQueue is a thread-safe in-memory queue for job listings
 type JobQueue struct {
-	items []*models.JobListing
-	mutex sync.Mutex
+	items          []*models.JobListing
+	mutex          sync.Mutex
+	queueSizeGauge prometheus.Gauge
 }
 
 // NewJobQueue creates a new in-memory job queue
 func NewJobQueue() *JobQueue {
+	queueSizeGauge := metrics.GetManager().CreateGauge("job_listing_queue_size", "The size of the job listing queue")
 	return &JobQueue{
-		items: make([]*models.JobListing, 0),
+		items:          make([]*models.JobListing, 0),
+		queueSizeGauge: queueSizeGauge,
 	}
 }
 
@@ -24,6 +29,7 @@ func (q *JobQueue) Enqueue(job *models.JobListing) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	q.items = append(q.items, job)
+	q.queueSizeGauge.Set(float64(len(q.items)))
 }
 
 // Dequeue removes and returns the next job listing from the queue
@@ -38,6 +44,7 @@ func (q *JobQueue) Dequeue() *models.JobListing {
 
 	job := q.items[0]
 	q.items = q.items[1:]
+	q.queueSizeGauge.Set(float64(len(q.items)))
 	return job
 }
 

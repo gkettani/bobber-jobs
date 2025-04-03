@@ -99,6 +99,25 @@ func (m *MetricsManager) CreateHistogramVec(name, help string, buckets []float64
 	return histogramVec
 }
 
+func (m *MetricsManager) CreateGauge(name, help string) prometheus.Gauge {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if metric, exists := m.metricsStore[name]; exists {
+		return metric.(prometheus.Gauge)
+	}
+
+	gauge := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: name,
+		Help: help,
+	})
+
+	prometheus.MustRegister(gauge)
+
+	m.metricsStore[name] = gauge
+	return gauge
+}
+
 func (m *MetricsManager) CreateGaugeVec(name, help string, labelNames []string) *prometheus.GaugeVec {
 	mu.Lock()
 	defer mu.Unlock()
