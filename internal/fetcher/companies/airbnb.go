@@ -3,6 +3,7 @@ package companies
 import (
 	"regexp"
 
+	"github.com/gkettani/bobber-the-swe/internal/common"
 	"github.com/gkettani/bobber-the-swe/internal/fetcher"
 )
 
@@ -11,7 +12,7 @@ func NewAirbnbFetcher(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
 
 	return fetcher.NewCompanyFetcher(
 		fetchStrategy,
-		fetcher.CompanyNameAirbnb,
+		common.CompanyNameAirbnb,
 		"https://careers.airbnb.com/positions-sitemap.xml",
 		fetcher.RegexExtractor(regexp.MustCompile(`/positions/([^<]+)/`)),
 	)

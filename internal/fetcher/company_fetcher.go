@@ -1,12 +1,13 @@
 package fetcher
 
 import (
+	"github.com/gkettani/bobber-the-swe/internal/common"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 )
 
 type CompanyFetcher struct {
 	strategy      FetchStrategy
-	companyName   CompanyName
+	companyName   common.CompanyName
 	sourceURL     string
 	extractorFunc ExtractorFunc
 }
@@ -14,7 +15,7 @@ type CompanyFetcher struct {
 // NewCompanyFetcher creates a new company fetcher with the specified strategy
 func NewCompanyFetcher(
 	strategy FetchStrategy,
-	companyName CompanyName,
+	companyName common.CompanyName,
 	sourceURL string,
 	extractorFunc ExtractorFunc,
 ) *CompanyFetcher {
@@ -32,6 +33,6 @@ func (f *CompanyFetcher) Fetch() ([]*models.JobListing, error) {
 }
 
 // CompanyName implements the Fetcher interface
-func (f *CompanyFetcher) CompanyName() CompanyName {
+func (f *CompanyFetcher) CompanyName() common.CompanyName {
 	return f.companyName
 }

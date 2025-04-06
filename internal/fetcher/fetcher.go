@@ -4,34 +4,20 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/gkettani/bobber-the-swe/internal/common"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 )
 
 // Fetcher defines the contract for fetching job listings
 type Fetcher interface {
 	Fetch() ([]*models.JobListing, error)
-	CompanyName() CompanyName
+	CompanyName() common.CompanyName
 }
 
 // FetchStrategy defines the contract for different fetching strategies
 type FetchStrategy interface {
 	FetchJobs(sourceURL string, extractor ExtractorFunc) ([]*models.JobListing, error)
 }
-
-type CompanyName string
-
-const (
-	CompanyNameCriteo     CompanyName = "Criteo"
-	CompanyNameDatadog    CompanyName = "Datadog"
-	CompanyNameRedpanda   CompanyName = "Redpanda"
-	CompanyNamePigment    CompanyName = "Pigment"
-	CompanyNameDiabolocom CompanyName = "Diabolocom"
-	CompanyNameYelp       CompanyName = "Yelp"
-	CompanyNameEtsy       CompanyName = "Etsy"
-	CompanyNameAirbnb     CompanyName = "Airbnb"
-	CompanyNameStripe     CompanyName = "Stripe"
-	CompanyNameMastercard CompanyName = "Mastercard"
-)
 
 // ExtractorFunc is a function type for extracting external IDs from URLs
 type ExtractorFunc func(url string) (string, error)
