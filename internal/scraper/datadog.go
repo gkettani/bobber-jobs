@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gkettani/bobber-the-swe/internal/common"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 )
 
@@ -45,4 +46,8 @@ func (s *DatadogScraper) Scrape(jobListing *models.JobListing) (*models.Job, err
 
 func (s *DatadogScraper) CanHandle(url string) bool {
 	return strings.Contains(url, "datadoghq.com/")
+}
+
+func (s *DatadogScraper) CompanyName() common.CompanyName {
+	return common.CompanyNameDatadog
 }

@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/gkettani/bobber-the-swe/internal/common"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 )
 
 type Scraper interface {
 	Scrape(jobListing *models.JobListing) (*models.Job, error)
 	CanHandle(url string) bool
+	CompanyName() common.CompanyName
 }
 
 type ScraperConfig struct {

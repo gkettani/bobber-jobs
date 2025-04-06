@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gkettani/bobber-the-swe/internal/cache"
 	"github.com/gkettani/bobber-the-swe/internal/db"
 	"github.com/gkettani/bobber-the-swe/internal/fetcher"
 	"github.com/gkettani/bobber-the-swe/internal/fetcher/companies"
 	"github.com/gkettani/bobber-the-swe/internal/logger"
-	"github.com/gkettani/bobber-the-swe/internal/metrics"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 	"github.com/gkettani/bobber-the-swe/internal/queue"
 	"github.com/gkettani/bobber-the-swe/internal/repository"
@@ -19,7 +19,6 @@ import (
 
 func main() {
 	logger.Info("Start the app")
-	scraperDuration := metrics.GetManager().CreateGaugeVec("scraper_scrape_duration_seconds", "Duration of job listing scrape in seconds", []string{"scraper"})
 
 	baseFetcher := fetcher.NewBaseFetcher()
 
@@ -43,11 +42,13 @@ func main() {
 
 	jobsQueue := queue.NewJobQueue()
 
+	cache := cache.NewInMemoryCache()
+
 	go func() {
 		for {
 			compositeFetcher.Fetch(jobsQueue)
 			// sleep for 1 minute
-			time.Sleep(10 * time.Minute)
+			time.Sleep(1 * time.Minute)
 		}
 	}()
 
@@ -66,14 +67,19 @@ func main() {
 				continue
 			}
 
+			if cache.Exists(jobListing.ExternalID) {
+				logger.Debug(fmt.Sprintf("Job listing already exists in cache: %v", jobListing))
+				continue
+			}
+
+			cache.Set(jobListing.ExternalID, jobListing.ExternalID)
+
 			logger.Debug(fmt.Sprintf("Processing job listing: %v", jobListing))
-			scrapeStart := time.Now()
 			job, err := compositeScraper.Scrape(jobListing)
 			if err != nil {
 				logger.Error(fmt.Sprintf("Error scraping job listing: %v", err))
 				continue
 			}
-			scraperDuration.WithLabelValues(job.CompanyName).Set(time.Since(scrapeStart).Seconds())
 
 			logger.Debug(fmt.Sprintf("Scraped job: %v", job))
 

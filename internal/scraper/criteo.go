@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/gkettani/bobber-the-swe/internal/common"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 )
 
@@ -50,4 +51,8 @@ func (s *CriteoScraper) Scrape(jobListing *models.JobListing) (*models.Job, erro
 
 func (s *CriteoScraper) CanHandle(url string) bool {
 	return strings.Contains(url, "criteo.com")
+}
+
+func (s *CriteoScraper) CompanyName() common.CompanyName {
+	return common.CompanyNameCriteo
 }
