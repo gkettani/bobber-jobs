@@ -1,4 +1,4 @@
 cmd/legacy/*
-infra/*
+infra/logs/*
 .env
 Makefile

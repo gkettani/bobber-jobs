@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: jobs-db
+    restart: always
+    command: -c config_file=/etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./logs:/var/log/postgresql
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+
+
+volumes:
+  pgdata:
