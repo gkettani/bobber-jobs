@@ -9,7 +9,6 @@ import (
 	"github.com/gkettani/bobber-the-swe/internal/cache"
 	"github.com/gkettani/bobber-the-swe/internal/db"
 	"github.com/gkettani/bobber-the-swe/internal/fetcher"
-	"github.com/gkettani/bobber-the-swe/internal/fetcher/companies"
 	"github.com/gkettani/bobber-the-swe/internal/logger"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 	"github.com/gkettani/bobber-the-swe/internal/queue"
@@ -18,14 +17,15 @@ import (
 )
 
 func main() {
-	logger.Info("Start the app")
+	logger.Info("Starting job fetcher application")
 
-	strategyFactory := fetcher.NewStrategyFactory(fetcher.NewHTTPService())
+	jobFetcher := fetcher.NewJobFetcher()
+	if err := jobFetcher.LoadFromConfig("config/companies.yaml"); err != nil {
+		logger.Error(fmt.Sprintf("Failed to load company configuration: %v", err))
+		panic(err)
+	}
 
-	compositeFetcher := fetcher.NewCompositeFetcher().
-		AddFetcher(companies.NewDatadogFetcher(strategyFactory)).
-		AddFetcher(companies.NewMistralFetcher(strategyFactory)).
-		AddFetcher(companies.NewPigmentFetcher(strategyFactory))
+	logger.Info(fmt.Sprintf("Loaded %d companies from configuration", len(jobFetcher.GetRegisteredCompanies())))
 
 	baseScraper := scraper.NewBaseScraper(scraper.ScraperConfig{
 		HTTPTimeout: 10 * time.Second,
@@ -38,32 +38,37 @@ func main() {
 		AddScraper(scraper.NewPigmentScraper(baseScraper))
 
 	jobRepository := repository.NewJobRepository(db.GetDBClient(), 100)
-
-	// Create a job processor that handles batch processing
 	jobProcessor := NewJobProcessor(jobRepository, 50, 5*time.Second)
-
 	jobsQueue := queue.NewJobQueue()
-
 	cache := cache.NewInMemoryCache()
 
 	go func() {
 		for {
-			compositeFetcher.Fetch(jobsQueue)
-			// sleep for 1 minute
+			logger.Info("Fetching jobs from all companies")
+			allJobs, err := jobFetcher.FetchAllJobs()
+			if err != nil {
+				logger.Error(fmt.Sprintf("Error fetching all jobs: %v", err))
+			} else {
+				for companyName, jobs := range allJobs {
+					logger.Info(fmt.Sprintf("Found %d jobs for %s", len(jobs), companyName))
+					for _, job := range jobs {
+						jobsQueue.Enqueue(job)
+					}
+				}
+			}
+
+			logger.Info("Fetch cycle completed, sleeping for 10 minutes")
 			time.Sleep(10 * time.Minute)
 		}
 	}()
 
-	// Consumer goroutine
 	go func() {
 		for {
-			// Non-blocking check
 			if jobsQueue.IsEmpty() {
 				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 
-			// Process jobs
 			jobListing := jobsQueue.Dequeue()
 			if jobListing == nil {
 				continue
@@ -84,7 +89,6 @@ func main() {
 			}
 
 			logger.Debug(fmt.Sprintf("Scraped job: %v", job))
-
 			jobProcessor.Add(job)
 		}
 	}()
