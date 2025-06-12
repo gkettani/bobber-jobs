@@ -23,7 +23,6 @@ func main() {
 	strategyFactory := fetcher.NewStrategyFactory(fetcher.NewHTTPService())
 
 	compositeFetcher := fetcher.NewCompositeFetcher().
-		// AddFetcher(companies.NewCriteoFetcher(strategyFactory)).
 		AddFetcher(companies.NewDatadogFetcher(strategyFactory)).
 		AddFetcher(companies.NewMistralFetcher(strategyFactory)).
 		AddFetcher(companies.NewPigmentFetcher(strategyFactory))
@@ -34,7 +33,6 @@ func main() {
 	})
 
 	compositeScraper := scraper.NewCompositeScraper().
-		AddScraper(scraper.NewCriteoScraper(baseScraper)).
 		AddScraper(scraper.NewDatadogScraper(baseScraper)).
 		AddScraper(scraper.NewMistralScraper(baseScraper)).
 		AddScraper(scraper.NewPigmentScraper(baseScraper))

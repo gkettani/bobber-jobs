@@ -13,6 +13,7 @@ type CriteoScraper struct {
 	*BaseScraper
 }
 
+// Does not work anymore, the website is now protected by Cloudflare and blocks requests from non-browser clients
 func NewCriteoScraper(baseScraper *BaseScraper) *CriteoScraper {
 	return &CriteoScraper{
 		BaseScraper: baseScraper,
