@@ -38,7 +38,7 @@ func (s *CriteoScraper) Scrape(jobListing *models.JobListing) (*models.Job, erro
 
 	job := models.Job{
 		ExternalID:  jobListing.ExternalID,
-		CompanyName: "Criteo",
+		CompanyName: string(common.CompanyNameCriteo),
 		URL:         jobListing.URL,
 		Title:       title,
 		Location:    location,

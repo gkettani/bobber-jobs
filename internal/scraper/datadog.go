@@ -33,7 +33,7 @@ func (s *DatadogScraper) Scrape(jobListing *models.JobListing) (*models.Job, err
 
 	job := models.Job{
 		ExternalID:  jobListing.ExternalID,
-		CompanyName: "Datadog",
+		CompanyName: string(common.CompanyNameDatadog),
 		URL:         jobListing.URL,
 		Title:       title,
 		Location:    location,
