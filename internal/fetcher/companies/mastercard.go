@@ -7,8 +7,8 @@ import (
 	"github.com/gkettani/bobber-the-swe/internal/fetcher"
 )
 
-func NewMastercardFetcher1(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
-	fetchStrategy := fetcher.NewSitemapStrategy(baseFetcher)
+func NewMastercardFetcher1(strategyFactory *fetcher.StrategyFactory) fetcher.Fetcher {
+	fetchStrategy := strategyFactory.NewSitemapStrategy()
 
 	return fetcher.NewCompanyFetcher(
 		fetchStrategy,
@@ -18,8 +18,8 @@ func NewMastercardFetcher1(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
 	)
 }
 
-func NewMastercardFetcher2(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
-	fetchStrategy := fetcher.NewSitemapStrategy(baseFetcher)
+func NewMastercardFetcher2(strategyFactory *fetcher.StrategyFactory) fetcher.Fetcher {
+	fetchStrategy := strategyFactory.NewSitemapStrategy()
 
 	return fetcher.NewCompanyFetcher(
 		fetchStrategy,
@@ -29,8 +29,8 @@ func NewMastercardFetcher2(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
 	)
 }
 
-func NewMastercardFetcher3(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
-	fetchStrategy := fetcher.NewSitemapStrategy(baseFetcher)
+func NewMastercardFetcher3(strategyFactory *fetcher.StrategyFactory) fetcher.Fetcher {
+	fetchStrategy := strategyFactory.NewSitemapStrategy()
 
 	return fetcher.NewCompanyFetcher(
 		fetchStrategy,

@@ -13,4 +13,5 @@ const (
 	CompanyNameAirbnb     CompanyName = "Airbnb"
 	CompanyNameStripe     CompanyName = "Stripe"
 	CompanyNameMastercard CompanyName = "Mastercard"
+	CompanyNameMistral    CompanyName = "Mistral"
 )

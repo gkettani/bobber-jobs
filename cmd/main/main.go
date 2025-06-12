@@ -20,11 +20,13 @@ import (
 func main() {
 	logger.Info("Start the app")
 
-	baseFetcher := fetcher.NewBaseFetcher()
+	strategyFactory := fetcher.NewStrategyFactory(fetcher.NewHTTPService())
 
 	compositeFetcher := fetcher.NewCompositeFetcher().
-		AddFetcher(companies.NewCriteoFetcher(baseFetcher)).
-		AddFetcher(companies.NewDatadogFetcher(baseFetcher))
+		// AddFetcher(companies.NewCriteoFetcher(strategyFactory)).
+		AddFetcher(companies.NewDatadogFetcher(strategyFactory)).
+		AddFetcher(companies.NewMistralFetcher(strategyFactory)).
+		AddFetcher(companies.NewPigmentFetcher(strategyFactory))
 
 	baseScraper := scraper.NewBaseScraper(scraper.ScraperConfig{
 		HTTPTimeout: 10 * time.Second,
@@ -33,7 +35,9 @@ func main() {
 
 	compositeScraper := scraper.NewCompositeScraper().
 		AddScraper(scraper.NewCriteoScraper(baseScraper)).
-		AddScraper(scraper.NewDatadogScraper(baseScraper))
+		AddScraper(scraper.NewDatadogScraper(baseScraper)).
+		AddScraper(scraper.NewMistralScraper(baseScraper)).
+		AddScraper(scraper.NewPigmentScraper(baseScraper))
 
 	jobRepository := repository.NewJobRepository(db.GetDBClient(), 100)
 
@@ -48,7 +52,7 @@ func main() {
 		for {
 			compositeFetcher.Fetch(jobsQueue)
 			// sleep for 1 minute
-			time.Sleep(1 * time.Minute)
+			time.Sleep(10 * time.Minute)
 		}
 	}()
 

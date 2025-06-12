@@ -7,8 +7,8 @@ import (
 	"github.com/gkettani/bobber-the-swe/internal/fetcher"
 )
 
-func NewYelpFetcher(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
-	fetchStrategy := fetcher.NewSitemapStrategy(baseFetcher)
+func NewYelpFetcher(strategyFactory *fetcher.StrategyFactory) fetcher.Fetcher {
+	fetchStrategy := strategyFactory.NewSitemapStrategy()
 
 	return fetcher.NewCompanyFetcher(
 		fetchStrategy,

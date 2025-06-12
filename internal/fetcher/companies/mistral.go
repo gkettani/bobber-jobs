@@ -7,13 +7,13 @@ import (
 	"github.com/gkettani/bobber-the-swe/internal/fetcher"
 )
 
-func NewDiabolocomFetcher(strategyFactory *fetcher.StrategyFactory) fetcher.Fetcher {
+func NewMistralFetcher(strategyFactory *fetcher.StrategyFactory) fetcher.Fetcher {
 	fetchStrategy := strategyFactory.NewHTMLStrategy(".posting-title")
 
 	return fetcher.NewCompanyFetcher(
 		fetchStrategy,
-		common.CompanyNameDiabolocom,
-		"https://jobs.eu.lever.co/diabolocom",
-		fetcher.RegexExtractor(regexp.MustCompile(`diabolocom/([a-z0-9-]+)`)),
+		common.CompanyNameMistral,
+		"https://jobs.lever.co/mistral",
+		fetcher.RegexExtractor(regexp.MustCompile(`mistral/([a-z0-9-]+)`)),
 	)
 }

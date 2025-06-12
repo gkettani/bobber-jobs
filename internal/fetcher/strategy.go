@@ -1,16 +1,43 @@
 package fetcher
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gkettani/bobber-the-swe/internal/models"
 )
 
-// SitemapStrategy implements the FetchStrategy for XML sitemaps
+type StrategyFactory struct {
+	httpClient *HTTPService
+}
+
+func NewStrategyFactory(httpClient *HTTPService) *StrategyFactory {
+	return &StrategyFactory{
+		httpClient: httpClient,
+	}
+}
+
+func (f *StrategyFactory) NewSitemapStrategy() *SitemapStrategy {
+	return &SitemapStrategy{
+		httpService: f.httpClient,
+	}
+}
+
+func (f *StrategyFactory) NewHTMLStrategy(linkSelector string) *HTMLStrategy {
+	return &HTMLStrategy{
+		httpService:  f.httpClient,
+		linkSelector: linkSelector,
+	}
+}
+
+/*  Sitemap Strategy */
 type SitemapStrategy struct {
-	*BaseFetcher
+	httpService *HTTPService
 }
 
 type Sitemap struct {
@@ -19,14 +46,8 @@ type Sitemap struct {
 	} `xml:"url"`
 }
 
-func NewSitemapStrategy(baseFetcher *BaseFetcher) *SitemapStrategy {
-	return &SitemapStrategy{
-		BaseFetcher: baseFetcher,
-	}
-}
-
 func (s *SitemapStrategy) FetchJobs(sourceURL string, extractor ExtractorFunc) ([]*models.JobListing, error) {
-	content, err := s.FetchContent(sourceURL)
+	content, err := s.httpService.FetchContent(sourceURL)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching sitemap content: %w", err)
 	}
@@ -53,21 +74,18 @@ func (s *SitemapStrategy) parseSitemapXML(data []byte, extractor ExtractorFunc) 
 	return jobListings, nil
 }
 
-// HTMLStrategy implements the FetchStrategy for HTML pages
+/*  HTML Strategy */
 type HTMLStrategy struct {
-	*BaseFetcher
+	httpService  *HTTPService
 	linkSelector string
 }
 
-func NewHTMLStrategy(baseFetcher *BaseFetcher, linkSelector string) *HTMLStrategy {
-	return &HTMLStrategy{
-		BaseFetcher:  baseFetcher,
-		linkSelector: linkSelector,
-	}
-}
-
 func (s *HTMLStrategy) FetchJobs(sourceURL string, extractor ExtractorFunc) ([]*models.JobListing, error) {
-	doc, err := s.FetchHTML(sourceURL)
+	content, err := s.httpService.FetchContent(sourceURL)
+	if err != nil {
+		return nil, err
+	}
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(content))
 	if err != nil {
 		return nil, fmt.Errorf("error fetching HTML content: %w", err)
 	}
@@ -92,4 +110,25 @@ func (s *HTMLStrategy) FetchJobs(sourceURL string, extractor ExtractorFunc) ([]*
 	})
 
 	return jobListings, nil
+}
+
+type HTTPService struct {
+	httpClient *http.Client
+}
+
+func NewHTTPService() *HTTPService {
+	return &HTTPService{
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}
+}
+
+func (c *HTTPService) FetchContent(url string) ([]byte, error) {
+	resp, err := c.httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return io.ReadAll(resp.Body)
 }

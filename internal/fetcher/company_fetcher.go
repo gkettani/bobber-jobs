@@ -12,7 +12,6 @@ type CompanyFetcher struct {
 	extractorFunc ExtractorFunc
 }
 
-// NewCompanyFetcher creates a new company fetcher with the specified strategy
 func NewCompanyFetcher(
 	strategy FetchStrategy,
 	companyName common.CompanyName,
@@ -27,12 +26,10 @@ func NewCompanyFetcher(
 	}
 }
 
-// Fetch implements the Fetcher interface
 func (f *CompanyFetcher) Fetch() ([]*models.JobListing, error) {
 	return f.strategy.FetchJobs(f.sourceURL, f.extractorFunc)
 }
 
-// CompanyName implements the Fetcher interface
 func (f *CompanyFetcher) CompanyName() common.CompanyName {
 	return f.companyName
 }

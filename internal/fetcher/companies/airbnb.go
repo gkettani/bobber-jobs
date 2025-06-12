@@ -7,8 +7,8 @@ import (
 	"github.com/gkettani/bobber-the-swe/internal/fetcher"
 )
 
-func NewAirbnbFetcher(baseFetcher *fetcher.BaseFetcher) fetcher.Fetcher {
-	fetchStrategy := fetcher.NewSitemapStrategy(baseFetcher)
+func NewAirbnbFetcher(strategyFactory *fetcher.StrategyFactory) fetcher.Fetcher {
+	fetchStrategy := strategyFactory.NewSitemapStrategy()
 
 	return fetcher.NewCompanyFetcher(
 		fetchStrategy,
