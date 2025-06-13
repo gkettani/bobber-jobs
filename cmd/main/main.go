@@ -27,15 +27,13 @@ func main() {
 
 	logger.Info(fmt.Sprintf("Loaded %d companies from configuration", len(jobFetcher.GetRegisteredCompanies())))
 
-	baseScraper := scraper.NewBaseScraper(scraper.ScraperConfig{
-		HTTPTimeout: 10 * time.Second,
-		MaxRetries:  3,
-	})
+	scraper := scraper.NewScraper()
+	if err := scraper.LoadFromConfig("config/scrapers.yaml"); err != nil {
+		logger.Error(fmt.Sprintf("Failed to load scraper configuration: %v", err))
+		panic(err)
+	}
 
-	compositeScraper := scraper.NewCompositeScraper().
-		AddScraper(scraper.NewDatadogScraper(baseScraper)).
-		AddScraper(scraper.NewMistralScraper(baseScraper)).
-		AddScraper(scraper.NewPigmentScraper(baseScraper))
+	logger.Info(fmt.Sprintf("Loaded scrapers for %d companies", len(scraper.GetRegisteredCompanies())))
 
 	jobRepository := repository.NewJobRepository(db.GetDBClient(), 100)
 	jobProcessor := NewJobProcessor(jobRepository, 50, 5*time.Second)
@@ -82,7 +80,8 @@ func main() {
 			cache.Set(jobListing.ExternalID, jobListing.ExternalID)
 
 			logger.Debug(fmt.Sprintf("Processing job listing: %v", jobListing))
-			job, err := compositeScraper.Scrape(jobListing)
+			ctx := context.Background()
+			job, err := scraper.Scrape(ctx, jobListing)
 			if err != nil {
 				logger.Error(fmt.Sprintf("Error scraping job listing: %v", err))
 				continue

@@ -1,0 +1,36 @@
+scrapers:
+  datadog:
+    name: "Datadog"
+    url_patterns: ["datadoghq.com"]
+    selectors:
+      title: "h2"
+      location: "p"
+      description: ".job-description"
+    enabled: true
+
+  mistral:
+    name: "Mistral"
+    url_patterns: ["mistral"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: ".section-wrapper"
+    enabled: true
+
+  pigment:
+    name: "Pigment"
+    url_patterns: ["pigment"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: ".section-wrapper"
+    enabled: true
+
+  criteo:
+    name: "Criteo"
+    url_patterns: ["criteo.com"]
+    selectors:
+      title: "h1"
+      location: ".job-meta-locations > li"
+      description: ".cms-content"
+    enabled: false  # Disabled due to Cloudflare protection 
