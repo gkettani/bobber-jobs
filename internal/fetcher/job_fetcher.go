@@ -58,9 +58,16 @@ func NewJobFetcher() *JobFetcher {
 	}
 
 	return &JobFetcher{
-		httpClient: &http.Client{Timeout: 10 * time.Second},
-		companies:  make(map[string]CompanyConfig),
-		metrics:    fetcherMetrics,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				MaxIdleConns:        100,
+				MaxIdleConnsPerHost: 10,
+				IdleConnTimeout:     90 * time.Second,
+			},
+		},
+		companies: make(map[string]CompanyConfig),
+		metrics:   fetcherMetrics,
 	}
 }
 

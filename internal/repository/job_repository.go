@@ -65,9 +65,9 @@ func (r *jobRepository) WithTransaction(ctx context.Context, fn func(ctx context
 func (r *jobRepository) Insert(ctx context.Context, job *models.Job) error {
 	query := `
 		INSERT INTO jobs (
-			title, description, company_name, location, url, external_id, hash
+			title, description, company_name, location, url, external_id
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7
+			$1, $2, $3, $4, $5, $6
 		) RETURNING id`
 
 	err := r.db.QueryRowxContext(
@@ -79,7 +79,6 @@ func (r *jobRepository) Insert(ctx context.Context, job *models.Job) error {
 		job.Location,
 		job.URL,
 		job.ExternalID,
-		job.Hash,
 	).Scan(&job.ID)
 
 	if err != nil {
@@ -92,15 +91,12 @@ func (r *jobRepository) Insert(ctx context.Context, job *models.Job) error {
 func (r *jobRepository) Upsert(ctx context.Context, job *models.Job) error {
 	query := `
 		INSERT INTO jobs (
-			title, description, company_name, location, url, external_id, hash
+			title, description, company_name, location, url, external_id
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7
+			$1, $2, $3, $4, $5, $6
 		) ON CONFLICT (external_id) DO UPDATE 
 		SET
-			last_seen_at = NOW(),
-			description = EXCLUDED.description,
-			hash = EXCLUDED.hash
-		WHERE jobs.hash <> EXCLUDED.hash
+			last_seen_at = NOW()
 		RETURNING id`
 
 	err := r.db.QueryRowxContext(
@@ -112,7 +108,6 @@ func (r *jobRepository) Upsert(ctx context.Context, job *models.Job) error {
 		job.Location,
 		job.URL,
 		job.ExternalID,
-		job.Hash,
 	).Scan(&job.ID)
 
 	if err != nil && err != sql.ErrNoRows {
@@ -135,14 +130,14 @@ func (r *jobRepository) BulkInsert(ctx context.Context, jobs []*models.Job) erro
 			batch := jobs[i:end]
 
 			placeholders := make([]string, len(batch))
-			values := make([]any, 0, len(batch)*8)
+			values := make([]any, 0, len(batch)*6)
 
 			for j, job := range batch {
 				// Calculate placeholder position
-				pos := j * 7
+				pos := j * 6
 				placeholders[j] = fmt.Sprintf(
-					"($%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-					pos+1, pos+2, pos+3, pos+4, pos+5, pos+6, pos+7,
+					"($%d, $%d, $%d, $%d, $%d, $%d)",
+					pos+1, pos+2, pos+3, pos+4, pos+5, pos+6,
 				)
 
 				values = append(values,
@@ -152,47 +147,21 @@ func (r *jobRepository) BulkInsert(ctx context.Context, jobs []*models.Job) erro
 					job.Location,
 					job.URL,
 					job.ExternalID,
-					job.Hash,
 				)
 			}
 
 			query := fmt.Sprintf(`
 				INSERT INTO jobs (
-					title, description, company_name, location, url, external_id, hash
+					title, description, company_name, location, url, external_id
 				) VALUES %s
 				ON CONFLICT (external_id) DO UPDATE 
 				SET
-					last_seen_at = NOW(),
-					description = EXCLUDED.description,
-					hash = EXCLUDED.hash
-				WHERE jobs.hash <> EXCLUDED.hash
-				RETURNING id`, strings.Join(placeholders, ","))
+					last_seen_at = NOW()`, strings.Join(placeholders, ","))
 
-			rows, err := tx.QueryxContext(ctx, query, values...)
+			_, err := tx.ExecContext(ctx, query, values...)
 			if err != nil {
 				return fmt.Errorf("failed to bulk insert jobs: %w", err)
 			}
-
-			// Assign IDs to the original job objects
-			j := i
-			for rows.Next() {
-				var id int64
-				if err := rows.Scan(&id); err != nil {
-					rows.Close()
-					return fmt.Errorf("failed to scan returned job ID: %w", err)
-				}
-				// Only set ID if it was successfully inserted (might be less than batch size due to ON CONFLICT)
-				if j < len(jobs) {
-					jobs[j].ID = id
-					j++
-				}
-			}
-
-			if err := rows.Err(); err != nil {
-				return fmt.Errorf("error iterating through result rows: %w", err)
-			}
-
-			rows.Close()
 		}
 
 		return nil

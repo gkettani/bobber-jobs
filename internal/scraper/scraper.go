@@ -48,9 +48,16 @@ func NewScraper() *Scraper {
 	}
 
 	return &Scraper{
-		httpClient: &http.Client{Timeout: 10 * time.Second},
-		companies:  make(map[string]ScraperConfig),
-		metrics:    scraperMetrics,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				MaxIdleConns:        100,
+				MaxIdleConnsPerHost: 10,
+				IdleConnTimeout:     90 * time.Second,
+			},
+		},
+		companies: make(map[string]ScraperConfig),
+		metrics:   scraperMetrics,
 	}
 }
 
@@ -117,10 +124,52 @@ func (s *Scraper) findCompanyByURL(url string) *ScraperConfig {
 }
 
 func (s *Scraper) scrapeWithConfig(ctx context.Context, jobListing *models.JobListing, config *ScraperConfig) (*models.Job, error) {
+	var lastErr error
+	maxRetries := 3
+	baseDelay := 1 * time.Second
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			delay := time.Duration(attempt) * baseDelay
+			logger.Info(fmt.Sprintf("Retrying scrape for %s (attempt %d/%d) after %v", jobListing.URL, attempt+1, maxRetries, delay))
+
+			select {
+			case <-time.After(delay):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+
+		job, err := s.attemptScrape(ctx, jobListing, config)
+		if err == nil {
+			return job, nil
+		}
+
+		lastErr = err
+
+		// Don't retry on certain errors
+		if strings.Contains(err.Error(), "no scraper configuration") ||
+			strings.Contains(err.Error(), "could not extract job title") ||
+			strings.Contains(err.Error(), "status code: 404") ||
+			strings.Contains(err.Error(), "status code: 403") {
+			break
+		}
+
+		logger.Info(fmt.Sprintf("Scrape attempt %d failed for %s: %v", attempt+1, jobListing.URL, err))
+	}
+
+	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries, lastErr)
+}
+
+func (s *Scraper) attemptScrape(ctx context.Context, jobListing *models.JobListing, config *ScraperConfig) (*models.Job, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", jobListing.URL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
