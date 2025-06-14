@@ -64,30 +64,29 @@ func main() {
 				continue
 			}
 
-			jobListing := jobsQueue.Dequeue()
-			if jobListing == nil {
+			jobReference := jobsQueue.Dequeue()
+			if jobReference == nil {
 				continue
 			}
 
-			if cache.Exists(jobListing.ExternalID) {
-				logger.Debug(fmt.Sprintf("Job listing already exists in cache: %v", jobListing))
+			if cache.Exists(jobReference.ExternalID) {
+				logger.Debug(fmt.Sprintf("Job reference already exists in cache: %v", jobReference))
 				continue
 			}
 
-			cache.Set(jobListing.ExternalID, jobListing.ExternalID)
+			cache.Set(jobReference.ExternalID, jobReference.ExternalID)
 
-			logger.Debug(fmt.Sprintf("Processing job listing: %v", jobListing))
+			logger.Debug(fmt.Sprintf("Processing job reference: %v", jobReference))
 			ctx := context.Background()
-			job, err := scraper.Scrape(ctx, jobListing)
+			job, err := scraper.Scrape(ctx, jobReference)
 			if err != nil {
-				logger.Error(fmt.Sprintf("Error scraping job listing: %v", err))
+				logger.Error(fmt.Sprintf("Error scraping job reference: %v", err))
 				continue
 			}
 
 			logger.Debug(fmt.Sprintf("Scraped job: %v", job))
 
-			// Insert job directly to repository
-			err = jobRepository.Insert(ctx, job)
+			err = jobRepository.Upsert(ctx, job)
 			if err != nil {
 				logger.Error(fmt.Sprintf("Error inserting job: %v", err))
 				continue

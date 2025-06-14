@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings" // je veux bien un moyen de savoir combien il y a de job listing attente de scraper
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -32,7 +32,7 @@ func NewScraper() *Scraper {
 	scraperMetrics := &ScraperMetrics{
 		scrapeDuration: metricsManager.CreateGaugeVec(
 			"scraper_scrape_duration_seconds",
-			"Duration of job listing scrape in seconds",
+			"Duration of job reference scrape in seconds",
 			[]string{"company"},
 		),
 		scrapeTotal: metricsManager.CreateCounterVec(
@@ -80,10 +80,10 @@ func (s *Scraper) LoadFromConfig(configPath string) error {
 	return nil
 }
 
-func (s *Scraper) Scrape(ctx context.Context, jobListing *models.JobListing) (*models.Job, error) {
-	companyConfig := s.findCompanyByURL(jobListing.URL)
+func (s *Scraper) Scrape(ctx context.Context, jobReference *models.JobReference) (*models.Job, error) {
+	companyConfig := s.findCompanyByURL(jobReference.URL)
 	if companyConfig == nil {
-		return nil, fmt.Errorf("no scraper configuration found for URL: %s", jobListing.URL)
+		return nil, fmt.Errorf("no scraper configuration found for URL: %s", jobReference.URL)
 	}
 
 	start := time.Now()
@@ -93,7 +93,7 @@ func (s *Scraper) Scrape(ctx context.Context, jobListing *models.JobListing) (*m
 
 	s.metrics.scrapeTotal.WithLabelValues(companyConfig.Name).Inc()
 
-	job, err := s.scrapeWithConfig(ctx, jobListing, companyConfig)
+	job, err := s.scrapeWithConfig(ctx, jobReference, companyConfig)
 	if err != nil {
 		s.metrics.scrapeErrors.WithLabelValues(companyConfig.Name, "scrape_error").Inc()
 		return nil, fmt.Errorf("failed to scrape job from %s: %w", companyConfig.Name, err)
@@ -123,7 +123,7 @@ func (s *Scraper) findCompanyByURL(url string) *ScraperConfig {
 	return nil
 }
 
-func (s *Scraper) scrapeWithConfig(ctx context.Context, jobListing *models.JobListing, config *ScraperConfig) (*models.Job, error) {
+func (s *Scraper) scrapeWithConfig(ctx context.Context, jobReference *models.JobReference, config *ScraperConfig) (*models.Job, error) {
 	var lastErr error
 	maxRetries := 3
 	baseDelay := 1 * time.Second
@@ -131,7 +131,7 @@ func (s *Scraper) scrapeWithConfig(ctx context.Context, jobListing *models.JobLi
 	for attempt := 0; attempt < maxRetries; attempt++ {
 		if attempt > 0 {
 			delay := time.Duration(attempt) * baseDelay
-			logger.Info(fmt.Sprintf("Retrying scrape for %s (attempt %d/%d) after %v", jobListing.URL, attempt+1, maxRetries, delay))
+			logger.Info(fmt.Sprintf("Retrying scrape for %s (attempt %d/%d) after %v", jobReference.URL, attempt+1, maxRetries, delay))
 
 			select {
 			case <-time.After(delay):
@@ -140,7 +140,7 @@ func (s *Scraper) scrapeWithConfig(ctx context.Context, jobListing *models.JobLi
 			}
 		}
 
-		job, err := s.attemptScrape(ctx, jobListing, config)
+		job, err := s.attemptScrape(ctx, jobReference, config)
 		if err == nil {
 			return job, nil
 		}
@@ -155,14 +155,14 @@ func (s *Scraper) scrapeWithConfig(ctx context.Context, jobListing *models.JobLi
 			break
 		}
 
-		logger.Info(fmt.Sprintf("Scrape attempt %d failed for %s: %v", attempt+1, jobListing.URL, err))
+		logger.Info(fmt.Sprintf("Scrape attempt %d failed for %s: %v", attempt+1, jobReference.URL, err))
 	}
 
 	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries, lastErr)
 }
 
-func (s *Scraper) attemptScrape(ctx context.Context, jobListing *models.JobListing, config *ScraperConfig) (*models.Job, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", jobListing.URL, nil)
+func (s *Scraper) attemptScrape(ctx context.Context, jobReference *models.JobReference, config *ScraperConfig) (*models.Job, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", jobReference.URL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -200,9 +200,9 @@ func (s *Scraper) attemptScrape(ctx context.Context, jobListing *models.JobListi
 	}
 
 	job := &models.Job{
-		ExternalID:  jobListing.ExternalID,
+		ExternalID:  jobReference.ExternalID,
 		CompanyName: config.Name,
-		URL:         jobListing.URL,
+		URL:         jobReference.URL,
 		Title:       title,
 		Location:    location,
 		Description: description,

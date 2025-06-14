@@ -20,7 +20,7 @@ type Job struct {
 	ExpiredAt   time.Time `json:"expired_at"`
 }
 
-type JobListing struct {
+type JobReference struct {
 	URL        string
 	ExternalID string
 }

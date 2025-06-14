@@ -8,33 +8,28 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// JobQueue is a thread-safe in-memory queue for job listings
 type JobQueue struct {
-	items          []*models.JobListing
+	items          []*models.JobReference
 	mutex          sync.Mutex
 	queueSizeGauge prometheus.Gauge
 }
 
-// NewJobQueue creates a new in-memory job queue
 func NewJobQueue() *JobQueue {
-	queueSizeGauge := metrics.GetManager().CreateGauge("job_listing_queue_size", "The size of the job listing queue")
+	queueSizeGauge := metrics.GetManager().CreateGauge("job_reference_queue_size", "The size of the job reference queue")
 	return &JobQueue{
-		items:          make([]*models.JobListing, 0),
+		items:          make([]*models.JobReference, 0),
 		queueSizeGauge: queueSizeGauge,
 	}
 }
 
-// Enqueue adds a job listing to the queue
-func (q *JobQueue) Enqueue(job *models.JobListing) {
+func (q *JobQueue) Enqueue(job *models.JobReference) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	q.items = append(q.items, job)
 	q.queueSizeGauge.Set(float64(len(q.items)))
 }
 
-// Dequeue removes and returns the next job listing from the queue
-// Returns nil if the queue is empty
-func (q *JobQueue) Dequeue() *models.JobListing {
+func (q *JobQueue) Dequeue() *models.JobReference {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
@@ -48,14 +43,12 @@ func (q *JobQueue) Dequeue() *models.JobListing {
 	return job
 }
 
-// Size returns the current number of items in the queue
 func (q *JobQueue) Size() int {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	return len(q.items)
 }
 
-// IsEmpty returns true if the queue is empty
 func (q *JobQueue) IsEmpty() bool {
 	return q.Size() == 0
 }

@@ -37,7 +37,7 @@ func NewJobFetcher() *JobFetcher {
 	fetcherMetrics := &JobFetcherMetrics{
 		fetchDuration: metricsManager.CreateGaugeVec(
 			"fetcher_fetch_duration_seconds",
-			"Duration of job listing fetch in seconds",
+			"Duration of job reference fetch in seconds",
 			[]string{"company", "fetch_type"},
 		),
 		fetchTotal: metricsManager.CreateCounterVec(
@@ -97,7 +97,7 @@ func (f *JobFetcher) RegisterCompany(config CompanyConfig) error {
 	return nil
 }
 
-func (f *JobFetcher) FetchJobs(companyName string) ([]*models.JobListing, error) {
+func (f *JobFetcher) FetchJobs(companyName string) ([]*models.JobReference, error) {
 	config, exists := f.companies[companyName]
 	if !exists {
 		return nil, fmt.Errorf("company %s not registered", companyName)
@@ -110,7 +110,7 @@ func (f *JobFetcher) FetchJobs(companyName string) ([]*models.JobListing, error)
 
 	f.metrics.fetchTotal.WithLabelValues(string(companyName), config.FetchType).Inc()
 
-	var jobs []*models.JobListing
+	var jobs []*models.JobReference
 	var err error
 
 	switch config.FetchType {
@@ -133,8 +133,8 @@ func (f *JobFetcher) FetchJobs(companyName string) ([]*models.JobListing, error)
 	return jobs, nil
 }
 
-func (f *JobFetcher) FetchAllJobs() (map[string][]*models.JobListing, error) {
-	results := make(map[string][]*models.JobListing)
+func (f *JobFetcher) FetchAllJobs() (map[string][]*models.JobReference, error) {
+	results := make(map[string][]*models.JobReference)
 
 	for companyName := range f.companies {
 		jobs, err := f.FetchJobs(companyName)
@@ -156,7 +156,7 @@ func (f *JobFetcher) GetRegisteredCompanies() []string {
 	return companies
 }
 
-func (f *JobFetcher) fetchFromSitemap(config CompanyConfig) ([]*models.JobListing, error) {
+func (f *JobFetcher) fetchFromSitemap(config CompanyConfig) ([]*models.JobReference, error) {
 	resp, err := f.httpClient.Get(config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch sitemap: %w", err)
@@ -182,10 +182,10 @@ func (f *JobFetcher) fetchFromSitemap(config CompanyConfig) ([]*models.JobListin
 		return nil, fmt.Errorf("failed to parse sitemap: %w", err)
 	}
 
-	var jobs []*models.JobListing
+	var jobs []*models.JobReference
 	for _, entry := range sitemap.URLs {
 		if externalID := f.extractID(entry.Loc, config.GetCompiledPattern()); externalID != "" {
-			jobs = append(jobs, &models.JobListing{
+			jobs = append(jobs, &models.JobReference{
 				ExternalID: externalID,
 				URL:        entry.Loc,
 			})
@@ -195,7 +195,7 @@ func (f *JobFetcher) fetchFromSitemap(config CompanyConfig) ([]*models.JobListin
 	return jobs, nil
 }
 
-func (f *JobFetcher) fetchFromHTML(config CompanyConfig) ([]*models.JobListing, error) {
+func (f *JobFetcher) fetchFromHTML(config CompanyConfig) ([]*models.JobReference, error) {
 	resp, err := f.httpClient.Get(config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch HTML: %w", err)
@@ -211,7 +211,7 @@ func (f *JobFetcher) fetchFromHTML(config CompanyConfig) ([]*models.JobListing, 
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
-	var jobs []*models.JobListing
+	var jobs []*models.JobReference
 	doc.Find(config.LinkSelector).Each(func(i int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
 		if !exists {
@@ -219,7 +219,7 @@ func (f *JobFetcher) fetchFromHTML(config CompanyConfig) ([]*models.JobListing, 
 		}
 
 		if externalID := f.extractID(href, config.GetCompiledPattern()); externalID != "" {
-			jobs = append(jobs, &models.JobListing{
+			jobs = append(jobs, &models.JobReference{
 				ExternalID: externalID,
 				URL:        href,
 			})
@@ -229,7 +229,7 @@ func (f *JobFetcher) fetchFromHTML(config CompanyConfig) ([]*models.JobListing, 
 	return jobs, nil
 }
 
-func (f *JobFetcher) fetchFromAPI(config CompanyConfig) ([]*models.JobListing, error) {
+func (f *JobFetcher) fetchFromAPI(config CompanyConfig) ([]*models.JobReference, error) {
 	var body io.Reader
 	if config.RequestBody != "" {
 		body = strings.NewReader(config.RequestBody)
@@ -262,7 +262,7 @@ func (f *JobFetcher) fetchFromAPI(config CompanyConfig) ([]*models.JobListing, e
 	return f.parseAPIResponse(config, respBody)
 }
 
-func (f *JobFetcher) parseAPIResponse(config CompanyConfig, respBody []byte) ([]*models.JobListing, error) {
+func (f *JobFetcher) parseAPIResponse(config CompanyConfig, respBody []byte) ([]*models.JobReference, error) {
 	var data interface{}
 	if err := json.Unmarshal(respBody, &data); err != nil {
 		return nil, fmt.Errorf("failed to parse API response: %w", err)
@@ -290,7 +290,7 @@ func (f *JobFetcher) parseAPIResponse(config CompanyConfig, respBody []byte) ([]
 		}
 	}
 
-	var jobs []*models.JobListing
+	var jobs []*models.JobReference
 	idField := config.IDField
 	if idField == "" {
 		idField = "id" // default field name
@@ -321,7 +321,7 @@ func (f *JobFetcher) parseAPIResponse(config CompanyConfig, respBody []byte) ([]
 
 		jobURL := f.generateJobURL(config, externalID)
 
-		jobs = append(jobs, &models.JobListing{
+		jobs = append(jobs, &models.JobReference{
 			ExternalID: externalID,
 			URL:        jobURL,
 		})
