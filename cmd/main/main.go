@@ -3,97 +3,85 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/gkettani/bobber-the-swe/internal/cache"
-	"github.com/gkettani/bobber-the-swe/internal/db"
-	"github.com/gkettani/bobber-the-swe/internal/fetcher"
 	"github.com/gkettani/bobber-the-swe/internal/logger"
-	"github.com/gkettani/bobber-the-swe/internal/queue"
-	"github.com/gkettani/bobber-the-swe/internal/repository"
-	"github.com/gkettani/bobber-the-swe/internal/scraper"
+	"github.com/gkettani/bobber-the-swe/internal/services/deduplication"
+	"github.com/gkettani/bobber-the-swe/internal/services/discovery"
+	"github.com/gkettani/bobber-the-swe/internal/services/enrichment"
+	"github.com/gkettani/bobber-the-swe/internal/services/orchestration"
+	"github.com/gkettani/bobber-the-swe/internal/services/persistence"
 )
 
 func main() {
-	logger.Info("Starting job fetcher application")
+	logger.Info("Starting job processing application with new architecture")
 
-	jobFetcher := fetcher.NewJobFetcher()
-	if err := jobFetcher.LoadFromConfig("config/companies.yaml"); err != nil {
-		logger.Error(fmt.Sprintf("Failed to load company configuration: %v", err))
+	// Create context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Initialize services
+	discoveryService, err := discovery.NewJobDiscoveryService("config/companies.yaml")
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to create discovery service: %v", err))
 		panic(err)
 	}
 
-	logger.Info(fmt.Sprintf("Loaded %d companies from configuration", len(jobFetcher.GetRegisteredCompanies())))
-
-	scraper := scraper.NewScraper()
-	if err := scraper.LoadFromConfig("config/scrapers.yaml"); err != nil {
-		logger.Error(fmt.Sprintf("Failed to load scraper configuration: %v", err))
+	enrichmentService, err := enrichment.NewJobEnrichmentService("config/scrapers.yaml")
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to create enrichment service: %v", err))
 		panic(err)
 	}
 
-	logger.Info(fmt.Sprintf("Loaded scrapers for %d companies", len(scraper.GetRegisteredCompanies())))
+	persistenceService := persistence.NewJobPersistenceService(100)
+	deduplicationService := deduplication.NewDeduplicationService()
 
-	jobRepository := repository.NewJobRepository(db.GetDBClient(), 100)
-	jobsQueue := queue.NewJobQueue()
-	cache := cache.NewInMemoryCache()
+	// Create orchestrator configuration
+	config := orchestration.DefaultConfig()
 
-	go func() {
-		for {
-			logger.Info("Fetching jobs from all companies")
-			allJobs, err := jobFetcher.FetchAllJobs()
-			if err != nil {
-				logger.Error(fmt.Sprintf("Error fetching all jobs: %v", err))
-			} else {
-				for companyName, jobs := range allJobs {
-					logger.Info(fmt.Sprintf("Found %d jobs for %s", len(jobs), companyName))
-					for _, job := range jobs {
-						jobsQueue.Enqueue(job)
-					}
-				}
-			}
+	// Create and start orchestrator
+	orchestrator := orchestration.NewOrchestrator(
+		config,
+		discoveryService,
+		enrichmentService,
+		persistenceService,
+		deduplicationService,
+	)
 
-			logger.Info("Fetch cycle completed, sleeping for 10 minutes")
-			time.Sleep(10 * time.Minute)
-		}
-	}()
+	// Start the pipeline
+	if err := orchestrator.Start(ctx); err != nil {
+		logger.Error(fmt.Sprintf("Failed to start orchestrator: %v", err))
+		panic(err)
+	}
 
-	go func() {
-		for {
-			if jobsQueue.IsEmpty() {
-				time.Sleep(100 * time.Millisecond)
-				continue
-			}
+	// Log startup status using structured models
+	status := orchestrator.GetStatus()
+	logger.Info(fmt.Sprintf("Pipeline started successfully - Discovery companies: %d, Enrichment companies: %d, Queue size: %d",
+		status.DiscoveryCompanies, status.EnrichmentCompanies, status.QueueSize))
+	logger.Info(fmt.Sprintf("Pipeline uptime: %s", status.Uptime))
 
-			jobReference := jobsQueue.Dequeue()
-			if jobReference == nil {
-				continue
-			}
+	// Set up graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-			if cache.Exists(jobReference.ExternalID) {
-				logger.Debug(fmt.Sprintf("Job reference already exists in cache: %v", jobReference))
-				continue
-			}
+	// Wait for shutdown signal
+	<-sigChan
+	logger.Info("Received shutdown signal, stopping pipeline gracefully...")
 
-			cache.Set(jobReference.ExternalID, jobReference.ExternalID)
+	// Log final metrics before shutdown
+	finalMetrics := orchestrator.GetMetrics()
+	logger.Info(fmt.Sprintf("Final metrics - Jobs processed: %d, Success rate: %.2f%%, Discovery cycles: %d",
+		finalMetrics.JobsProcessed, finalMetrics.CalculateSuccessRate(), finalMetrics.DiscoveryCycles))
 
-			logger.Debug(fmt.Sprintf("Processing job reference: %v", jobReference))
-			ctx := context.Background()
-			job, err := scraper.Scrape(ctx, jobReference)
-			if err != nil {
-				logger.Error(fmt.Sprintf("Error scraping job reference: %v", err))
-				continue
-			}
+	// Stop the orchestrator
+	if err := orchestrator.Stop(); err != nil {
+		logger.Error(fmt.Sprintf("Error stopping orchestrator: %v", err))
+	}
 
-			logger.Debug(fmt.Sprintf("Scraped job: %v", job))
+	// Cancel context to stop all workers
+	cancel()
 
-			err = jobRepository.Upsert(ctx, job)
-			if err != nil {
-				logger.Error(fmt.Sprintf("Error inserting job: %v", err))
-				continue
-			}
-			logger.Debug(fmt.Sprintf("Successfully inserted job: %s", job.Title))
-		}
-	}()
-
-	select {}
+	logger.Info("Application shutdown complete")
 }

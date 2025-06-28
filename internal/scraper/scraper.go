@@ -80,7 +80,7 @@ func (s *Scraper) LoadFromConfig(configPath string) error {
 	return nil
 }
 
-func (s *Scraper) Scrape(ctx context.Context, jobReference *models.JobReference) (*models.Job, error) {
+func (s *Scraper) Scrape(ctx context.Context, jobReference *models.JobReference) (*models.JobDetails, error) {
 	companyConfig := s.findCompanyByURL(jobReference.URL)
 	if companyConfig == nil {
 		return nil, fmt.Errorf("no scraper configuration found for URL: %s", jobReference.URL)
@@ -102,10 +102,6 @@ func (s *Scraper) Scrape(ctx context.Context, jobReference *models.JobReference)
 	return job, nil
 }
 
-func (s *Scraper) CanHandle(url string) bool {
-	return s.findCompanyByURL(url) != nil
-}
-
 func (s *Scraper) GetRegisteredCompanies() []string {
 	companies := make([]string, 0, len(s.companies))
 	for _, config := range s.companies {
@@ -123,7 +119,7 @@ func (s *Scraper) findCompanyByURL(url string) *ScraperConfig {
 	return nil
 }
 
-func (s *Scraper) scrapeWithConfig(ctx context.Context, jobReference *models.JobReference, config *ScraperConfig) (*models.Job, error) {
+func (s *Scraper) scrapeWithConfig(ctx context.Context, jobReference *models.JobReference, config *ScraperConfig) (*models.JobDetails, error) {
 	var lastErr error
 	maxRetries := 3
 	baseDelay := 1 * time.Second
@@ -161,7 +157,7 @@ func (s *Scraper) scrapeWithConfig(ctx context.Context, jobReference *models.Job
 	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries, lastErr)
 }
 
-func (s *Scraper) attemptScrape(ctx context.Context, jobReference *models.JobReference, config *ScraperConfig) (*models.Job, error) {
+func (s *Scraper) attemptScrape(ctx context.Context, jobReference *models.JobReference, config *ScraperConfig) (*models.JobDetails, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", jobReference.URL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -199,7 +195,7 @@ func (s *Scraper) attemptScrape(ctx context.Context, jobReference *models.JobRef
 		return nil, fmt.Errorf("could not extract job title using selector: %s", config.Selectors.Title)
 	}
 
-	job := &models.Job{
+	job := &models.JobDetails{
 		ExternalID:  jobReference.ExternalID,
 		CompanyName: config.Name,
 		URL:         jobReference.URL,

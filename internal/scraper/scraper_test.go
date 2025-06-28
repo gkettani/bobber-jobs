@@ -108,47 +108,6 @@ func TestScraperConfig_MatchesURL(t *testing.T) {
 	}
 }
 
-func TestScraper_CanHandle(t *testing.T) {
-	scraper := NewScraper()
-
-	// Add test configuration
-	scraper.companies["test"] = ScraperConfig{
-		Name:        "Test Company",
-		URLPatterns: []string{"test.com"},
-		Selectors: SelectorConfig{
-			Title:       "h1",
-			Location:    ".location",
-			Description: ".description",
-		},
-		Enabled: true,
-	}
-
-	tests := []struct {
-		name string
-		url  string
-		want bool
-	}{
-		{
-			name: "can handle matching URL",
-			url:  "https://jobs.test.com/job/123",
-			want: true,
-		},
-		{
-			name: "cannot handle non-matching URL",
-			url:  "https://jobs.other.com/job/123",
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := scraper.CanHandle(tt.url); got != tt.want {
-				t.Errorf("UniversalScraper.CanHandle() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestScraper_GetRegisteredCompanies(t *testing.T) {
 	scraper := NewScraper()
 

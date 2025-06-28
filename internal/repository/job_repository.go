@@ -13,10 +13,10 @@ import (
 )
 
 type JobRepository interface {
-	Insert(ctx context.Context, job *models.Job) error
-	Upsert(ctx context.Context, job *models.Job) error
-	BulkInsert(ctx context.Context, jobs []*models.Job) error
-	FindByID(ctx context.Context, id int64) (*models.Job, error)
+	Insert(ctx context.Context, job *models.JobDetails) error
+	Upsert(ctx context.Context, job *models.JobDetails) error
+	BulkInsert(ctx context.Context, jobs []*models.JobDetails) error
+	FindByID(ctx context.Context, id int64) (*models.JobDetails, error)
 }
 
 type jobRepository struct {
@@ -62,7 +62,7 @@ func (r *jobRepository) WithTransaction(ctx context.Context, fn func(ctx context
 	return nil
 }
 
-func (r *jobRepository) Insert(ctx context.Context, job *models.Job) error {
+func (r *jobRepository) Insert(ctx context.Context, job *models.JobDetails) error {
 	query := `
 		INSERT INTO jobs (
 			title, description, company_name, location, url, external_id
@@ -88,7 +88,7 @@ func (r *jobRepository) Insert(ctx context.Context, job *models.Job) error {
 	return nil
 }
 
-func (r *jobRepository) Upsert(ctx context.Context, job *models.Job) error {
+func (r *jobRepository) Upsert(ctx context.Context, job *models.JobDetails) error {
 	query := `
 		INSERT INTO jobs (
 			title, description, company_name, location, url, external_id
@@ -117,7 +117,7 @@ func (r *jobRepository) Upsert(ctx context.Context, job *models.Job) error {
 	return nil
 }
 
-func (r *jobRepository) BulkInsert(ctx context.Context, jobs []*models.Job) error {
+func (r *jobRepository) BulkInsert(ctx context.Context, jobs []*models.JobDetails) error {
 	if len(jobs) == 0 {
 		return nil
 	}
@@ -168,10 +168,10 @@ func (r *jobRepository) BulkInsert(ctx context.Context, jobs []*models.Job) erro
 	})
 }
 
-func (r *jobRepository) FindByID(ctx context.Context, id int64) (*models.Job, error) {
+func (r *jobRepository) FindByID(ctx context.Context, id int64) (*models.JobDetails, error) {
 	query := `SELECT id, title, description, company_name, external_id, location, url FROM jobs WHERE id = $1`
 
-	var job models.Job
+	var job models.JobDetails
 	err := r.db.GetContext(ctx, &job, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

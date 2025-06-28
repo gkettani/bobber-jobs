@@ -1,23 +1,9 @@
 companies:
-  datadog:
-    name: "Datadog"
-    fetch_type: "sitemap"
-    url: "https://careers.datadoghq.com/sitemap.xml"
-    id_pattern: "gh_jid=(\\d+)"
-    enabled: true
-
   airbnb:
     name: "Airbnb"
     fetch_type: "sitemap"
     url: "https://careers.airbnb.com/positions-sitemap.xml"
     id_pattern: "/positions/([^<]+)/"
-    enabled: false
-
-  etsy:
-    name: "Etsy"
-    fetch_type: "sitemap"
-    url: "https://careers.etsy.com/sitemap.xml"
-    id_pattern: "jobs/([^<]+)"
     enabled: false
 
   criteo:
@@ -27,18 +13,44 @@ companies:
     id_pattern: "/jobs/(r\\d+)/"
     enabled: false
 
-  stripe:
-    name: "Stripe"
+  datadog:
+    name: "Datadog"
     fetch_type: "sitemap"
-    url: "https://stripe.com/sitemap/partition-0.xml"
-    id_pattern: "/jobs/listing/[^/]+/(\\d+)"
+    url: "https://careers.datadoghq.com/sitemap.xml"
+    id_pattern: "gh_jid=(\\d+)"
+    enabled: true
+
+  diabolocom:
+    name: "Diabolocom"
+    fetch_type: "html"
+    url: "https://jobs.eu.lever.co/diabolocom"
+    link_selector: ".posting-title"
+    id_pattern: "diabolocom/([a-z0-9-]+)"
     enabled: false
 
-  yelp:
-    name: "Yelp"
+  etsy:
+    name: "Etsy"
     fetch_type: "sitemap"
-    url: "https://www.yelp.careers/sitemap.xml"
-    id_pattern: "/us/en/job/(\\d+)/"
+    url: "https://careers.etsy.com/sitemap.xml"
+    id_pattern: "jobs/([^<]+)"
+    enabled: false
+
+  hubspot:
+    name: "Hubspot"
+    fetch_type: "api"
+    url: "https://wtcfns.hubspot.com/careers/graphql"
+    method: "POST"
+    headers:
+      Content-Type: "application/json"
+    request_body: |
+      {
+        "operationName": "Jobs",
+        "variables": {},
+        "query": "query Jobs { jobs { id } }"
+      }
+    jobs_path: "data.jobs"
+    id_field: "id"
+    url_template: "https://www.hubspot.com/careers/jobs/{id}"
     enabled: false
 
   mastercard1:
@@ -78,14 +90,6 @@ companies:
     id_pattern: "pigment/([a-z0-9-]+)"
     enabled: true
 
-  diabolocom:
-    name: "Diabolocom"
-    fetch_type: "html"
-    url: "https://jobs.eu.lever.co/diabolocom"
-    link_selector: ".posting-title"
-    id_pattern: "diabolocom/([a-z0-9-]+)"
-    enabled: false
-
   redpanda:
     name: "Redpanda"
     fetch_type: "html"
@@ -94,52 +98,16 @@ companies:
     id_pattern: "redpandadata/jobs/([a-z0-9]+)"
     enabled: false
 
-  hubspot:
-    name: "Hubspot"
-    fetch_type: "api"
-    url: "https://wtcfns.hubspot.com/careers/graphql"
-    method: "POST"
-    headers:
-      Content-Type: "application/json"
-    request_body: |
-      {
-        "operationName": "Jobs",
-        "variables": {},
-        "query": "query Jobs { jobs { id } }"
-      }
-    jobs_path: "data.jobs"
-    id_field: "id"
-    url_template: "https://www.hubspot.com/careers/jobs/{id}"
+  stripe:
+    name: "Stripe"
+    fetch_type: "sitemap"
+    url: "https://stripe.com/sitemap/partition-0.xml"
+    id_pattern: "/jobs/listing/[^/]+/(\\d+)"
     enabled: false
 
-  # Example of another API with different structure
-  # example_api:
-  #   name: "Example API"
-  #   fetch_type: "api"
-  #   url: "https://api.example.com/graphql"
-  #   method: "POST"
-  #   headers:
-  #     Content-Type: "application/json"
-  #     Authorization: "Bearer token"
-  #   request_body: |
-  #     {
-  #       "query": "{ careers { positions { jobId title } } }"
-  #     }
-  #   jobs_path: "data.careers.positions"
-  #   id_field: "jobId"
-  #   url_template: "https://example.com/careers/{id}"
-  #   enabled: true
-
-  # Example of REST API (response is directly an array)
-  # rest_api:
-  #   name: "REST API"
-  #   fetch_type: "api"
-  #   url: "https://api.company.com/jobs"
-  #   method: "GET"
-  #   headers:
-  #     Accept: "application/json"
-  #     Authorization: "Bearer token"
-  #   # No jobs_path needed if response is directly an array
-  #   id_field: "id"
-  #   url_template: "https://company.com/job/{id}"
-  #   enabled: true
+  yelp:
+    name: "Yelp"
+    fetch_type: "sitemap"
+    url: "https://www.yelp.careers/sitemap.xml"
+    id_pattern: "/us/en/job/(\\d+)/"
+    enabled: false

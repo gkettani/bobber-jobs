@@ -1,4 +1,13 @@
 scrapers:
+  criteo:
+    name: "Criteo"
+    url_patterns: ["criteo.com"]
+    selectors:
+      title: "h1"
+      location: ".job-meta-locations > li"
+      description: ".cms-content"
+    enabled: false  # Disabled due to Cloudflare protection 
+
   datadog:
     name: "Datadog"
     url_patterns: ["datadoghq.com"]
@@ -25,12 +34,3 @@ scrapers:
       location: ".posting-categories > .location"
       description: ".section-wrapper"
     enabled: true
-
-  criteo:
-    name: "Criteo"
-    url_patterns: ["criteo.com"]
-    selectors:
-      title: "h1"
-      location: ".job-meta-locations > li"
-      description: ".cms-content"
-    enabled: false  # Disabled due to Cloudflare protection 
