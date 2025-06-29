@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobs - Bobber</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/webp" href="/static/assets/bobber.webp">
+    <link rel="shortcut icon" type="image/webp" href="/static/assets/bobber.webp">
+    <link rel="apple-touch-icon" href="/static/assets/bobber.webp">
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">
+                <img src="/static/assets/bobber.webp" alt="Bobber Logo">
+            </a>
+            
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    class="search-input" 
+                    placeholder="Search for jobs, companies, or locations"
+                    autocomplete="off"
+                >
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="jobs-header">
+            <h1 id="jobs-title" class="jobs-title">All Jobs</h1>
+            <p id="jobs-count" class="jobs-count">Loading...</p>
+        </div>
+
+        <div class="jobs-list">
+            <div id="jobs-list">
+                <div class="loading">Loading jobs...</div>
+            </div>
+        </div>
+
+        <nav id="pagination" class="pagination"></nav>
+    </main>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html> 

@@ -3,7 +3,10 @@ package web
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -29,6 +32,7 @@ type webService struct {
 	jobHandler     *handlers.JobHandler
 	companyHandler *handlers.CompanyHandler
 	metricsHandler *handlers.MetricsHandler
+	templates      *template.Template
 }
 
 // Config holds web service configuration
@@ -56,28 +60,24 @@ func NewWebService(orchestrator *orchestration.Orchestrator) WebService {
 	companyHandler := handlers.NewCompanyHandler(queryService)
 	metricsHandler := handlers.NewMetricsHandler(queryService, orchestrator)
 
+	// Load templates
+	templates, err := loadTemplates()
+	if err != nil {
+		logger.Error("Failed to load templates", "error", err)
+		panic(err)
+	}
+
 	ws := &webService{
 		host:           config.Host,
 		port:           config.Port,
 		jobHandler:     jobHandler,
 		companyHandler: companyHandler,
 		metricsHandler: metricsHandler,
+		templates:      templates,
 	}
 
-	// API routes
-	http.HandleFunc("/api/jobs", jobHandler.ListJobs)
-	http.HandleFunc("/api/jobs/", ws.handleJobsAPI)
-	http.HandleFunc("/api/companies", companyHandler.ListCompanies)
-	http.HandleFunc("/api/companies/", ws.handleCompaniesAPI)
-	http.HandleFunc("/api/metrics", metricsHandler.GetPipelineMetrics)
-	http.HandleFunc("/api/health", metricsHandler.GetHealthStatus)
-	http.HandleFunc("/api/dashboard", metricsHandler.GetDashboardData)
-
-	// Web UI routes
-	http.HandleFunc("/", ws.serveHome)
-	http.HandleFunc("/jobs", ws.serveJobsPage)
-	http.HandleFunc("/jobs/", ws.serveJobDetailPage)
-	http.HandleFunc("/companies", ws.serveCompaniesPage)
+	// Setup HTTP routes
+	ws.setupRoutes()
 
 	ws.server = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", config.Host, config.Port),
@@ -85,6 +85,58 @@ func NewWebService(orchestrator *orchestration.Orchestrator) WebService {
 	}
 
 	return ws
+}
+
+func (ws *webService) setupRoutes() {
+	// Static files
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static/"))))
+
+	// API routes
+	http.HandleFunc("/api/jobs", ws.jobHandler.ListJobs)
+	http.HandleFunc("/api/jobs/", ws.handleJobsAPI)
+	http.HandleFunc("/api/companies", ws.companyHandler.ListCompanies)
+	http.HandleFunc("/api/companies/", ws.handleCompaniesAPI)
+	http.HandleFunc("/api/metrics", ws.metricsHandler.GetPipelineMetrics)
+	http.HandleFunc("/api/health", ws.metricsHandler.GetHealthStatus)
+	http.HandleFunc("/api/dashboard", ws.metricsHandler.GetDashboardData)
+
+	// Web UI routes
+	http.HandleFunc("/", ws.serveHome)
+	http.HandleFunc("/jobs", ws.serveJobsPage)
+	http.HandleFunc("/jobs/", ws.serveJobDetailPage)
+}
+
+func loadTemplates() (*template.Template, error) {
+	// Check if templates directory exists
+	if _, err := os.Stat("web/templates"); os.IsNotExist(err) {
+		return nil, fmt.Errorf("templates directory not found: web/templates")
+	}
+
+	// Load all templates
+	tmpl := template.New("")
+	err := filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(path, ".html") {
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			name := strings.TrimSuffix(filepath.Base(path), ".html")
+			_, err = tmpl.New(name).Parse(string(content))
+			if err != nil {
+				return fmt.Errorf("error parsing template %s: %w", path, err)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error loading templates: %w", err)
+	}
+
+	return tmpl, nil
 }
 
 // Start starts the web service
@@ -167,121 +219,23 @@ func (ws *webService) serveHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	html := `<!DOCTYPE html>
-<html>
-<head>
-	<title>Bobber jobs - Job Dashboard</title>
-	<style>
-		body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
-		.container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
-		h1 { color: #333; text-align: center; margin-bottom: 30px; }
-		.nav { text-align: center; margin-bottom: 30px; }
-		.nav a { display: inline-block; padding: 10px 20px; margin: 0 10px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; }
-		.nav a:hover { background: #0056b3; }
-		.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
-		.stat-card { background: #f8f9fa; padding: 20px; border-radius: 6px; text-align: center; }
-		.stat-number { font-size: 24px; font-weight: bold; color: #007bff; }
-		.stat-label { color: #666; margin-top: 5px; }
-	</style>
-</head>
-<body>
-	<div class="container">
-		<h1>Bobber jobs - Job Dashboard</h1>
-		<div class="nav">
-			<a href="/jobs">Browse Jobs</a>
-			<a href="/companies">Company Stats</a>
-			<a href="/api/metrics">Pipeline Metrics</a>
-			<a href="/api/jobs">API Jobs</a>
-			<a href="/api/dashboard">API Dashboard</a>
-		</div>
-		<div id="stats" class="stats">
-			<div class="stat-card">
-				<div class="stat-number" id="total-jobs">Loading...</div>
-				<div class="stat-label">Total Jobs</div>
-			</div>
-			<div class="stat-card">
-				<div class="stat-number" id="total-companies">Loading...</div>
-				<div class="stat-label">Companies</div>
-			</div>
-			<div class="stat-card">
-				<div class="stat-number" id="success-rate">Loading...</div>
-				<div class="stat-label">Success Rate</div>
-			</div>
-		</div>
-		
-		<h2>Recent Jobs</h2>
-		<div id="recent-jobs">Loading...</div>
-	</div>
-	
-	<script>
-		// Load dashboard data
-		fetch('/api/dashboard')
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					document.getElementById('total-jobs').textContent = data.data.totalJobs.toLocaleString();
-					document.getElementById('total-companies').textContent = data.data.companyStats.length;
-					document.getElementById('success-rate').textContent = data.data.successRate.toFixed(1) + '%';
-					
-					// Display recent jobs
-					const recentJobsDiv = document.getElementById('recent-jobs');
-					const jobs = data.data.recentJobs.slice(0, 5);
-					recentJobsDiv.innerHTML = jobs.map(job => 
-						'<div style="border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px;">' +
-						'<h4><a href="/jobs/' + job.id + '">' + job.title + '</a></h4>' +
-						'<p><strong>' + job.companyName + '</strong> - ' + job.location + '</p>' +
-						'<p style="color: #666; font-size: 14px;">Added: ' + new Date(job.firstSeenAt).toLocaleDateString() + '</p>' +
-						'</div>'
-					).join('');
-				}
-			})
-			.catch(error => console.error('Error loading dashboard:', error));
-	</script>
-</body>
-</html>`
-	w.Write([]byte(html))
+
+	err := ws.templates.ExecuteTemplate(w, "home", nil)
+	if err != nil {
+		logger.Error("Error executing home template", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 // serveJobsPage serves the jobs listing page
 func (ws *webService) serveJobsPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	html := `<!DOCTYPE html>
-<html>
-<head>
-	<title>Jobs - Bobber jobs</title>
-	<style>
-		body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
-		.container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
-		.job-item { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 4px; }
-		.job-title { font-size: 18px; font-weight: bold; color: #007bff; text-decoration: none; }
-		.job-company { color: #666; margin: 5px 0; }
-	</style>
-</head>
-<body>
-	<div class="container">
-		<h1><a href="/" style="text-decoration: none; color: inherit;">Bobber jobs</a> - Jobs</h1>
-		<div id="jobs-list">Loading...</div>
-	</div>
-	
-	<script>
-		fetch('/api/jobs')
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					const jobsDiv = document.getElementById('jobs-list');
-					jobsDiv.innerHTML = data.data.jobs.map(job => 
-						'<div class="job-item">' +
-						'<a href="/jobs/' + job.id + '" class="job-title">' + job.title + '</a>' +
-						'<div class="job-company"><strong>' + job.companyName + '</strong> - ' + job.location + '</div>' +
-						'</div>'
-					).join('');
-				}
-			})
-			.catch(error => console.error('Error loading jobs:', error));
-	</script>
-</body>
-</html>`
-	w.Write([]byte(html))
+
+	err := ws.templates.ExecuteTemplate(w, "jobs", nil)
+	if err != nil {
+		logger.Error("Error executing jobs template", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 // serveJobDetailPage serves individual job details
@@ -292,89 +246,11 @@ func (ws *webService) serveJobDetailPage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	jobID := pathParts[1]
-
 	w.Header().Set("Content-Type", "text/html")
-	html := `<!DOCTYPE html>
-<html>
-<head>
-	<title>Job Details - Bobber jobs</title>
-	<style>
-		body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
-		.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
-		.back-link { display: inline-block; margin-bottom: 20px; color: #007bff; text-decoration: none; }
-	</style>
-</head>
-<body>
-	<div class="container">
-		<a href="/jobs" class="back-link">Back to Jobs</a>
-		<div id="job-details">Loading...</div>
-	</div>
-	
-	<script>
-		const jobId = '` + jobID + `';
-		
-		fetch('/api/jobs/' + jobId)
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					const job = data.data;
-					document.getElementById('job-details').innerHTML = 
-						'<h1>' + job.title + '</h1>' +
-						'<p><strong>Company:</strong> ' + job.companyName + '</p>' +
-						'<p><strong>Location:</strong> ' + job.location + '</p>' +
-						'<p><strong>Description:</strong></p>' +
-						'<div>' + job.description.replace(/\n/g, '<br>') + '</div>';
-				} else {
-					document.getElementById('job-details').innerHTML = '<p>Job not found.</p>';
-				}
-			})
-			.catch(error => {
-				document.getElementById('job-details').innerHTML = '<p>Error loading job details.</p>';
-			});
-	</script>
-</body>
-</html>`
-	w.Write([]byte(html))
-}
 
-// serveCompaniesPage serves the companies page
-func (ws *webService) serveCompaniesPage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	html := `<!DOCTYPE html>
-<html>
-<head>
-	<title>Companies - Bobber jobs</title>
-	<style>
-		body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
-		.container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
-		.company-item { border: 1px solid #ddd; padding: 20px; margin: 15px 0; border-radius: 4px; }
-		.company-name { font-size: 20px; font-weight: bold; color: #007bff; margin-bottom: 10px; }
-	</style>
-</head>
-<body>
-	<div class="container">
-		<h1><a href="/" style="text-decoration: none; color: inherit;">Bobber the SWE</a> - Companies</h1>
-		<div id="companies-list">Loading...</div>
-	</div>
-	
-	<script>
-		fetch('/api/companies')
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					const companiesDiv = document.getElementById('companies-list');
-					companiesDiv.innerHTML = data.data.map(company => 
-						'<div class="company-item">' +
-						'<div class="company-name">' + company.companyName + '</div>' +
-						'<p>Total Jobs: ' + company.jobCount + '</p>' +
-						'</div>'
-					).join('');
-				}
-			})
-			.catch(error => console.error('Error loading companies:', error));
-	</script>
-</body>
-</html>`
-	w.Write([]byte(html))
+	err := ws.templates.ExecuteTemplate(w, "job-detail", nil)
+	if err != nil {
+		logger.Error("Error executing job-detail template", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
