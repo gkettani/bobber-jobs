@@ -6,13 +6,13 @@ import "time"
 // It contains the minimal information needed to locate and identify a job posting.
 type JobReference struct {
 	// URL is the direct link to the job posting page
-	URL string `json:"url"`
+	URL string
 
 	// ExternalID is the unique identifier from the company's system
-	ExternalID string `json:"external_id"`
+	ExternalID string
 
 	// CompanyName is the name of the company offering the job
-	CompanyName string `json:"company_name"`
+	CompanyName string
 }
 
 // IsValid checks if the job reference has all required fields
@@ -23,17 +23,17 @@ func (jr *JobReference) IsValid() bool {
 // JobDetails represents complete information about a job posting.
 // This is the enriched version created after scraping the job reference.
 type JobDetails struct {
-	ID          int64     `db:"id"`
-	ExternalID  string    `db:"external_id"`
-	CompanyName string    `db:"company_name"`
-	URL         string    `db:"job_url"`
-	Title       string    `db:"title"`
-	Location    string    `db:"location"`
-	Description string    `db:"description"`
+	ID          int64     `db:"id" json:"id"`
+	ExternalID  string    `db:"external_id" json:"externalId"`
+	CompanyName string    `db:"company_name" json:"companyName"`
+	URL         string    `db:"url" json:"url"`
+	Title       string    `db:"title" json:"title"`
+	Location    string    `db:"location" json:"location"`
+	Description string    `db:"description" json:"description"`
 	Hash        string    `json:"-"` // for change detection
-	FirstSeenAt time.Time `json:"first_seen_at"`
-	LastSeenAt  time.Time `json:"last_seen_at"`
-	ExpiredAt   time.Time `json:"expired_at"`
+	FirstSeenAt time.Time `db:"first_seen_at" json:"firstSeenAt"`
+	LastSeenAt  time.Time `db:"last_seen_at" json:"lastSeenAt"`
+	ExpiredAt   time.Time `db:"expired_at" json:"expiredAt"`
 }
 
 // IsValid checks if the job details have all required fields

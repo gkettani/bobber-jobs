@@ -23,7 +23,7 @@ scrapers:
     selectors:
       title: ".posting-headline > h2"
       location: ".posting-categories > .location"
-      description: ".section-wrapper"
+      description: "[data-qa='job-description']"
     enabled: true
 
   pigment:
@@ -32,5 +32,5 @@ scrapers:
     selectors:
       title: ".posting-headline > h2"
       location: ".posting-categories > .location"
-      description: ".section-wrapper"
+      description: "[class='section-wrapper page-full-width']"
     enabled: true

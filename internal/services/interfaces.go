@@ -44,3 +44,27 @@ type DeduplicationService interface {
 	// MarkAsProcessed marks a job reference as processed
 	MarkAsProcessed(jobRef *models.JobReference)
 }
+
+// JobQueryService provides read-optimized database operations for the web interface
+type JobQueryService interface {
+	// GetJobs retrieves jobs with filtering and pagination
+	GetJobs(ctx context.Context, filters *models.JobFilters, pagination *models.Pagination) (*models.JobList, error)
+
+	// GetJobByID retrieves a specific job by ID
+	GetJobByID(ctx context.Context, id int64) (*models.JobDetails, error)
+
+	// SearchJobs performs full-text search on jobs
+	SearchJobs(ctx context.Context, query string, pagination *models.Pagination) (*models.JobList, error)
+
+	// GetCompanyStats retrieves statistics for all companies
+	GetCompanyStats(ctx context.Context) ([]models.CompanyStats, error)
+
+	// GetJobCountByCompany returns job counts grouped by company
+	GetJobCountByCompany(ctx context.Context) (map[string]int, error)
+
+	// GetTotalJobCount returns the total number of jobs in the database
+	GetTotalJobCount(ctx context.Context) (int64, error)
+
+	// GetRecentJobs returns the most recently discovered jobs
+	GetRecentJobs(ctx context.Context, limit int) ([]*models.LightJobDetails, error)
+}
