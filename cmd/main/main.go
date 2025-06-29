@@ -73,7 +73,7 @@ func main() {
 	logger.Info(fmt.Sprintf("Pipeline started successfully - Discovery companies: %d, Enrichment companies: %d, Queue size: %d",
 		status.DiscoveryCompanies, status.EnrichmentCompanies, status.QueueSize))
 	logger.Info(fmt.Sprintf("Pipeline uptime: %s", status.Uptime))
-	logger.Info(fmt.Sprintf("Web interface available at: http://localhost:%d", webService.GetPort()))
+	logger.Info(fmt.Sprintf("Web interface available at: http://%s:%d", webService.GetHost(), webService.GetPort()))
 
 	// Set up graceful shutdown
 	sigChan := make(chan os.Signal, 1)

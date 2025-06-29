@@ -1,12 +1,3 @@
-CREATE TABLE links (
-    id SERIAL PRIMARY KEY,
-    url TEXT UNIQUE NOT NULL,  -- The careers page URL
-    active BOOLEAN DEFAULT TRUE,  -- Determines if we scrape this source
-    metadata JSONB DEFAULT '{}',  -- Store additional data in a flexible format
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 CREATE TABLE jobs (
     id SERIAL PRIMARY KEY,
     external_id TEXT UNIQUE NOT NULL,
@@ -22,6 +13,8 @@ CREATE TABLE jobs (
     search_vector TSVECTOR GENERATED ALWAYS AS (
         to_tsvector('english', title || ' ' || description)
     ) STORED
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create GIN index for efficient text search
@@ -45,11 +38,6 @@ FOR EACH ROW EXECUTE FUNCTION jobs_search_update();
 
 -- Fast lookup on external_id
 CREATE INDEX jobs_external_id_idx ON jobs (external_id);
-
--- Quick filtering on scraped_at & expired_at
-CREATE INDEX jobs_scraped_at_idx ON jobs (scraped_at);
-CREATE INDEX jobs_expired_at_idx ON jobs (expired_at);
-
 
 -- Example
 SELECT id, title, job_url, location

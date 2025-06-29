@@ -20,7 +20,7 @@ type Config struct {
 // DefaultConfig returns a default configuration
 func DefaultConfig() Config {
 	return Config{
-		DiscoveryInterval: 10 * time.Minute,
+		DiscoveryInterval: 1 * time.Hour,
 		ProcessingDelay:   100 * time.Millisecond,
 	}
 }

@@ -19,11 +19,13 @@ type WebService interface {
 	Start(ctx context.Context) error
 	Stop() error
 	GetPort() int
+	GetHost() string
 }
 
 type webService struct {
 	server         *http.Server
 	port           int
+	host           string
 	jobHandler     *handlers.JobHandler
 	companyHandler *handlers.CompanyHandler
 	metricsHandler *handlers.MetricsHandler
@@ -55,6 +57,7 @@ func NewWebService(orchestrator *orchestration.Orchestrator) WebService {
 	metricsHandler := handlers.NewMetricsHandler(queryService, orchestrator)
 
 	ws := &webService{
+		host:           config.Host,
 		port:           config.Port,
 		jobHandler:     jobHandler,
 		companyHandler: companyHandler,
@@ -115,6 +118,11 @@ func (ws *webService) Stop() error {
 // GetPort returns the port
 func (ws *webService) GetPort() int {
 	return ws.port
+}
+
+// GetHost returns the host
+func (ws *webService) GetHost() string {
+	return ws.host
 }
 
 // handleJobsAPI routes job-related API requests
@@ -359,7 +367,7 @@ func (ws *webService) serveCompaniesPage(w http.ResponseWriter, r *http.Request)
 					companiesDiv.innerHTML = data.data.map(company => 
 						'<div class="company-item">' +
 						'<div class="company-name">' + company.companyName + '</div>' +
-						'<p>Total Jobs: ' + company.job_count + '</p>' +
+						'<p>Total Jobs: ' + company.jobCount + '</p>' +
 						'</div>'
 					).join('');
 				}

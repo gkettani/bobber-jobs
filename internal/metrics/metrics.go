@@ -55,7 +55,7 @@ func (m *MetricsManager) Initialize() {
 
 	if m.config.Enabled {
 		go func() {
-			logger.Info("Starting metrics server on port %d", m.config.Port)
+			logger.Info(fmt.Sprintf("Starting metrics server on port %d", m.config.Port))
 			http.Handle("/metrics", promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{}))
 			http.ListenAndServe(fmt.Sprintf(":%d", m.config.Port), nil)
 		}()
