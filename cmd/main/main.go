@@ -52,8 +52,7 @@ func main() {
 	)
 
 	// Create web service
-	webConfig := web.DefaultConfig()
-	webService := web.NewWebService(webConfig, orchestrator)
+	webService := web.NewWebService(orchestrator)
 
 	// Start the pipeline
 	if err := orchestrator.Start(ctx); err != nil {

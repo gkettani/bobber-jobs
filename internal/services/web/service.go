@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/gkettani/bobber-the-swe/internal/handlers"
 	"github.com/gkettani/bobber-the-swe/internal/logger"
 	"github.com/gkettani/bobber-the-swe/internal/services/orchestration"
@@ -30,23 +31,23 @@ type webService struct {
 
 // Config holds web service configuration
 type Config struct {
-	Port int
-	Host string
+	Port int    `env:"WEB_SERVICE_PORT" envDefault:"8080"`
+	Host string `env:"WEB_SERVICE_HOST" envDefault:"localhost"`
 }
 
-// DefaultConfig returns default configuration
-func DefaultConfig() *Config {
-	return &Config{
-		Port: 8080,
-		Host: "localhost",
+// LoadConfig loads the web service configuration
+func LoadConfig() *Config {
+	config := &Config{}
+	if err := env.Parse(config); err != nil {
+		logger.Error("Failed to parse web service config", "error", err)
+		panic(err)
 	}
+	return config
 }
 
 // NewWebService creates a new web service
-func NewWebService(config *Config, orchestrator *orchestration.Orchestrator) WebService {
-	if config == nil {
-		config = DefaultConfig()
-	}
+func NewWebService(orchestrator *orchestration.Orchestrator) WebService {
+	config := LoadConfig()
 
 	queryService := query.NewJobQueryService()
 	jobHandler := handlers.NewJobHandler(queryService)

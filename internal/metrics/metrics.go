@@ -1,13 +1,20 @@
 package metrics
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/gkettani/bobber-the-swe/internal/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+type MetricsConfig struct {
+	Port    int  `env:"METRICS_PORT" envDefault:"8080"`
+	Enabled bool `env:"METRICS_ENABLED" envDefault:"true"`
+}
 
 var (
 	instance *MetricsManager
@@ -18,14 +25,26 @@ var (
 type MetricsManager struct {
 	registry     *prometheus.Registry
 	metricsStore map[string]any
+	config       *MetricsConfig
+}
+
+func LoadConfig() *MetricsConfig {
+	config := &MetricsConfig{}
+	if err := env.Parse(config); err != nil {
+		logger.Error("Failed to parse metrics config", "error", err)
+		panic(err)
+	}
+	return config
 }
 
 // GetManager returns the singleton instance of MetricsManager
 func GetManager() *MetricsManager {
 	once.Do(func() {
+		config := LoadConfig()
 		instance = &MetricsManager{
 			registry:     prometheus.NewRegistry(),
 			metricsStore: make(map[string]any),
+			config:       config,
 		}
 	})
 	return instance
@@ -34,11 +53,13 @@ func GetManager() *MetricsManager {
 func (m *MetricsManager) Initialize() {
 	prometheus.DefaultRegisterer = m.registry
 
-	go func() {
-		logger.Info("Starting metrics server on port 8080")
-		http.Handle("/metrics", promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{}))
-		http.ListenAndServe(":8080", nil)
-	}()
+	if m.config.Enabled {
+		go func() {
+			logger.Info("Starting metrics server on port %d", m.config.Port)
+			http.Handle("/metrics", promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{}))
+			http.ListenAndServe(fmt.Sprintf(":%d", m.config.Port), nil)
+		}()
+	}
 }
 
 func (m *MetricsManager) CreateCounter(name, help string) prometheus.Counter {

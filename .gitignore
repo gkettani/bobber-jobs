@@ -1,4 +1,14 @@
-cmd/legacy/*
-infra/logs/*
 .env
-Makefile
+
+# Build artifacts
+bin/
+
+# Logs
+tmp/
+*.log
+build-errors.log
+coverage.out
+coverage.html
+
+# Development files
+.vscode/
