@@ -1,10 +1,66 @@
 companies:
+  360learning:
+    name: "360learning"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/360learning"
+    link_selector: ".posting-title"
+    id_pattern: "360learning/([a-z0-9-]+)"
+    enabled: true
+
   airbnb:
     name: "Airbnb"
     fetch_type: "sitemap"
     url: "https://careers.airbnb.com/positions-sitemap.xml"
     id_pattern: "/positions/([^<]+)/"
-    enabled: false
+    enabled: true
+
+  aircall:
+    name: "Aircall"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/aircall"
+    link_selector: ".posting-title"
+    id_pattern: "aircall/([a-z0-9-]+)"
+    enabled: true
+
+  algolia:
+    name: "Algolia"
+    fetch_type: "html"
+    url: "https://job-boards.greenhouse.io/algolia"
+    link_selector: ".job-post .cell a"
+    id_pattern: "algolia/jobs/([a-z0-9]+)"
+    enabled: true
+
+  anthropic:
+    name: "Anthropic"
+    fetch_type: "html"
+    url: "https://job-boards.greenhouse.io/anthropic"
+    link_selector: ".job-post .cell a"
+    id_pattern: "anthropic/jobs/([a-z0-9]+)"
+    enabled: true
+
+  artefact:
+    name: "Artefact"
+    fetch_type: "html"
+    url: "https://job-boards.greenhouse.io/artefactlinkedin"
+    link_selector: ".job-post .cell a"
+    id_pattern: "artefactlinkedin/jobs/([a-z0-9]+)"
+    enabled: true
+
+  backmarket:
+    name: "Backmarket"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/backmarket"
+    link_selector: ".posting-title"
+    id_pattern: "backmarket/([a-z0-9-]+)"
+    enabled: true
+
+  binance:
+    name: "Binance"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/binance"
+    link_selector: ".posting-title"
+    id_pattern: "binance/([a-z0-9-]+)"
+    enabled: true
 
   criteo:
     name: "Criteo"
@@ -20,13 +76,29 @@ companies:
     id_pattern: "gh_jid=(\\d+)"
     enabled: true
 
+  dataiku:
+    name: "Dataiku"
+    fetch_type: "html"
+    url: "https://job-boards.greenhouse.io/dataikujobs"
+    link_selector: ".job-post .cell a"
+    id_pattern: "dataikujobs/jobs/([a-z0-9]+)"
+    enabled: true
+
+  decathlon:
+    name: "Decathlon"
+    fetch_type: "html"
+    url: "https://job-boards.eu.greenhouse.io/decathlontechnology/"
+    link_selector: ".job-post .cell a"
+    id_pattern: "decathlontechnology/jobs/([a-z0-9]+)"
+    enabled: true
+
   diabolocom:
     name: "Diabolocom"
     fetch_type: "html"
     url: "https://jobs.eu.lever.co/diabolocom"
     link_selector: ".posting-title"
     id_pattern: "diabolocom/([a-z0-9-]+)"
-    enabled: false
+    enabled: true
 
   etsy:
     name: "Etsy"
@@ -52,6 +124,14 @@ companies:
     id_field: "id"
     url_template: "https://www.hubspot.com/careers/jobs/{id}"
     enabled: false
+
+  kraken:
+    name: "Kraken"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/kraken123"
+    link_selector: ".posting-title"
+    id_pattern: "kraken123/([a-z0-9-]+)"
+    enabled: true
 
   mastercard1:
     name: "Mastercard"
@@ -81,6 +161,21 @@ companies:
     link_selector: ".posting-title"
     id_pattern: "mistral/([a-z0-9-]+)"
     enabled: true
+  
+  proton:
+    name: "Proton"
+    fetch_type: "html"
+    url: "https://job-boards.eu.greenhouse.io/proton"
+    link_selector: ".job-post .cell a"
+    id_pattern: "proton/jobs/([a-z0-9]+)"
+    enabled: true
+
+  pinterest:
+    name: "Pinterest"
+    fetch_type: "sitemap"
+    url: "https://www.pinterestcareers.com/sitemap.xml"
+    id_pattern: "/jobs/([^/]+)/"
+    enabled: false
 
   pigment:
     name: "Pigment"
@@ -90,13 +185,37 @@ companies:
     id_pattern: "pigment/([a-z0-9-]+)"
     enabled: true
 
+  qonto:
+    name: "Qonto"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/qonto"
+    link_selector: ".posting-title"
+    id_pattern: "qonto/([a-z0-9-]+)"
+    enabled: true
+
   redpanda:
     name: "Redpanda"
     fetch_type: "html"
     url: "https://job-boards.greenhouse.io/redpandadata"
     link_selector: ".job-post .cell a"
     id_pattern: "redpandadata/jobs/([a-z0-9]+)"
-    enabled: false
+    enabled: true
+
+  scaleway:
+    name: "Scaleway"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/scaleway"
+    link_selector: ".posting-title"
+    id_pattern: "scaleway/([a-z0-9-]+)"
+    enabled: true
+
+  spotify:
+    name: "Spotify"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/spotify"
+    link_selector: ".posting-title"
+    id_pattern: "spotify/([a-z0-9-]+)"
+    enabled: true
 
   stripe:
     name: "Stripe"
@@ -104,6 +223,14 @@ companies:
     url: "https://stripe.com/sitemap/partition-0.xml"
     id_pattern: "/jobs/listing/[^/]+/(\\d+)"
     enabled: false
+
+  winamax:
+    name: "Winamax"
+    fetch_type: "html"
+    url: "https://jobs.lever.co/winamax"
+    link_selector: ".posting-title"
+    id_pattern: "winamax/([a-z0-9-]+)"
+    enabled: true
 
   yelp:
     name: "Yelp"

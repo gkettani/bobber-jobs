@@ -1,4 +1,76 @@
 scrapers:
+  360learning:
+    name: "360learning"
+    url_patterns: ["360learning"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[class='section-wrapper page-full-width']"
+    enabled: true
+
+  airbnb:
+    name: "Airbnb"
+    url_patterns: ["airbnb"]
+    selectors:
+      title: ".job-page-banner > h1"
+      location: ".offices"
+      description: ".job-detail"
+    enabled: true
+  
+  aircall:
+    name: "Aircall"
+    url_patterns: ["aircall"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[class='section-wrapper page-full-width']"
+    enabled: true
+
+  algolia:
+    name: "Algolia"
+    url_patterns: ["algolia"]
+    selectors:
+      title: ".job__title > h1"
+      location: ".job__location > div"
+      description: ".job__description > div"
+    enabled: true
+
+  anthropic:
+    name: "Anthropic"
+    url_patterns: ["anthropic"]
+    selectors:
+      title: ".job__title > h1"
+      location: ".job__location > div"
+      description: ".job__description"
+    enabled: true
+
+  artefact:
+    name: "Artefact"
+    url_patterns: ["artefactlinkedin"]
+    selectors:
+      title: ".job__title > h1"
+      location: ".job__location > div"
+      description: ".job__description"
+    enabled: true 
+
+  backmarket:
+    name: "Backmarket"
+    url_patterns: ["backmarket"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[class='section-wrapper page-full-width']"
+    enabled: true
+
+  binance:
+    name: "Binance"
+    url_patterns: ["binance"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[class='section-wrapper page-full-width']"
+    enabled: true
+
   criteo:
     name: "Criteo"
     url_patterns: ["criteo.com"]
@@ -6,7 +78,7 @@ scrapers:
       title: "h1"
       location: ".job-meta-locations > li"
       description: ".cms-content"
-    enabled: false  # Disabled due to Cloudflare protection 
+    enabled: true
 
   datadog:
     name: "Datadog"
@@ -15,6 +87,51 @@ scrapers:
       title: "h2"
       location: "p"
       description: ".job-description"
+    enabled: true
+
+  dataiku:
+    name: "Dataiku"
+    url_patterns: ["dataikujobs"]
+    selectors:
+      title: ".job__title > h1"
+      location: ".job__location > div"
+      description: ".job__description"
+    enabled: true
+
+  decathlon:
+    name: "Decathlon"
+    url_patterns: ["decathlontechnology"]
+    selectors:
+      title: ".job__title > h1"
+      location: ".job__location > div"
+      description: ".job__description"
+    enabled: true
+
+  diabolocom:
+    name: "Diabolocom"
+    url_patterns: ["diabolocom"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[data-qa='job-description']"
+    enabled: true
+
+  etsy:
+    name: "Etsy"
+    url_patterns: ["etsy"]
+    selectors:
+      title: ".job-title"
+      location: ".job-component-list-location"
+      description: ".job-description"
+    enabled: true
+
+  kraken:
+    name: "Kraken"
+    url_patterns: ["kraken123"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[class='section-wrapper page-full-width']"
     enabled: true
 
   mistral:
@@ -29,6 +146,60 @@ scrapers:
   pigment:
     name: "Pigment"
     url_patterns: ["pigment"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[class='section-wrapper page-full-width']"
+    enabled: true
+
+  proton:
+    name: "Proton"
+    url_patterns: ["proton"]
+    selectors:
+      title: ".job__title > h1"
+      location: ".job__location > div"
+      description: ".job__description"
+    enabled: true
+
+  qonto:
+    name: "Qonto"
+    url_patterns: ["qonto"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[data-qa='job-description']"
+    enabled: true
+
+  redpanda:
+    name: "Redpanda"
+    url_patterns: ["redpanda"]
+    selectors:
+      title: ".job__title > h1"
+      location: ".job__location > div"
+      description: ".job__description"
+    enabled: true
+
+  scaleway:
+    name: "Scaleway"
+    url_patterns: ["scaleway"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[data-qa='job-description']"
+    enabled: true
+
+  spotify:
+    name: "Spotify"
+    url_patterns: ["spotify"]
+    selectors:
+      title: ".posting-headline > h2"
+      location: ".posting-categories > .location"
+      description: "[class='section-wrapper page-full-width']"
+    enabled: true
+
+  winamax:
+    name: "Winamax"
+    url_patterns: ["winamax"]
     selectors:
       title: ".posting-headline > h2"
       location: ".posting-categories > .location"

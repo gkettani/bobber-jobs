@@ -44,6 +44,9 @@ COPY --from=builder /app/bobber .
 # Copy configuration files
 COPY --from=builder /app/config ./config
 
+# Copy the web directory
+COPY --from=builder /app/web ./web
+
 # Change ownership of the app directory
 RUN chown -R bobber:bobber /app
 
