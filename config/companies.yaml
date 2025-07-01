@@ -12,7 +12,7 @@ companies:
     fetch_type: "sitemap"
     url: "https://careers.airbnb.com/positions-sitemap.xml"
     id_pattern: "/positions/([^<]+)/"
-    enabled: true
+    enabled: false
 
   aircall:
     name: "Aircall"

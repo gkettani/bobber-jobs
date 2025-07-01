@@ -28,14 +28,17 @@ func (h *JobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 	filters := h.parseJobFilters(r.URL.Query())
 	pagination := h.parsePagination(r.URL.Query())
 
+	logger.LogWithRequestID(r.Context(), "info", "Processing job list request", "filters", filters, "pagination", pagination)
+
 	// Get jobs from database
 	jobList, err := h.queryService.GetJobs(r.Context(), filters, pagination)
 	if err != nil {
-		logger.Error("Failed to get jobs", "error", err)
+		logger.LogWithRequestID(r.Context(), "error", "Failed to get jobs", "error", err, "filters", filters, "pagination", pagination)
 		h.writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve jobs")
 		return
 	}
 
+	logger.LogWithRequestID(r.Context(), "info", "Successfully retrieved jobs", "count", len(jobList.Jobs))
 	h.writeJSONResponse(w, http.StatusOK, models.NewSuccessResponse(jobList))
 }
 
@@ -44,6 +47,7 @@ func (h *JobHandler) GetJob(w http.ResponseWriter, r *http.Request) {
 	// Extract job ID from URL path
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	if len(pathParts) < 3 {
+		logger.LogWithRequestID(r.Context(), "warn", "Invalid job ID in request path", "path", r.URL.Path)
 		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid job ID")
 		return
 	}
@@ -51,22 +55,27 @@ func (h *JobHandler) GetJob(w http.ResponseWriter, r *http.Request) {
 	idStr := pathParts[2] // /api/jobs/{id}
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
+		logger.LogWithRequestID(r.Context(), "warn", "Invalid job ID format", "id_string", idStr, "error", err)
 		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid job ID format")
 		return
 	}
+
+	logger.LogWithRequestID(r.Context(), "info", "Processing job detail request", "job_id", id)
 
 	// Get job from database
 	job, err := h.queryService.GetJobByID(r.Context(), id)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
+			logger.LogWithRequestID(r.Context(), "warn", "Job not found", "job_id", id)
 			h.writeErrorResponse(w, http.StatusNotFound, "Job not found")
 			return
 		}
-		logger.Error("Failed to get job", "error", err, "job_id", id)
+		logger.LogWithRequestID(r.Context(), "error", "Failed to get job", "error", err, "job_id", id)
 		h.writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve job")
 		return
 	}
 
+	logger.LogWithRequestID(r.Context(), "info", "Successfully retrieved job", "job_id", id, "job_title", job.Title)
 	h.writeJSONResponse(w, http.StatusOK, models.NewSuccessResponse(job))
 }
 
@@ -75,20 +84,24 @@ func (h *JobHandler) SearchJobs(w http.ResponseWriter, r *http.Request) {
 	// Get search query
 	searchQuery := r.URL.Query().Get("q")
 	if searchQuery == "" {
+		logger.LogWithRequestID(r.Context(), "warn", "Search request missing query parameter")
 		h.writeErrorResponse(w, http.StatusBadRequest, "Search query is required")
 		return
 	}
 
 	pagination := h.parsePagination(r.URL.Query())
 
+	logger.LogWithRequestID(r.Context(), "info", "Processing job search request", "query", searchQuery, "pagination", pagination)
+
 	// Perform search
 	jobList, err := h.queryService.SearchJobs(r.Context(), searchQuery, pagination)
 	if err != nil {
-		logger.Error("Failed to search jobs", "error", err, "query", searchQuery)
+		logger.LogWithRequestID(r.Context(), "error", "Failed to search jobs", "error", err, "query", searchQuery, "pagination", pagination)
 		h.writeErrorResponse(w, http.StatusInternalServerError, "Failed to search jobs")
 		return
 	}
 
+	logger.LogWithRequestID(r.Context(), "info", "Successfully completed job search", "query", searchQuery, "results_count", len(jobList.Jobs))
 	h.writeJSONResponse(w, http.StatusOK, models.NewSuccessResponse(jobList))
 }
 

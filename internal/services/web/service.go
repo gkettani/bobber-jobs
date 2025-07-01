@@ -13,6 +13,7 @@ import (
 	"github.com/caarlos0/env/v11"
 	"github.com/gkettani/bobber-the-swe/internal/handlers"
 	"github.com/gkettani/bobber-the-swe/internal/logger"
+	"github.com/gkettani/bobber-the-swe/internal/middlewares"
 	"github.com/gkettani/bobber-the-swe/internal/services/orchestration"
 	"github.com/gkettani/bobber-the-swe/internal/services/query"
 )
@@ -88,22 +89,24 @@ func NewWebService(orchestrator *orchestration.Orchestrator) WebService {
 }
 
 func (ws *webService) setupRoutes() {
-	// Static files
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static/"))))
+	mux := http.NewServeMux()
 
-	// API routes
-	http.HandleFunc("/api/jobs", ws.jobHandler.ListJobs)
-	http.HandleFunc("/api/jobs/", ws.handleJobsAPI)
-	http.HandleFunc("/api/companies", ws.companyHandler.ListCompanies)
-	http.HandleFunc("/api/companies/", ws.handleCompaniesAPI)
-	http.HandleFunc("/api/metrics", ws.metricsHandler.GetPipelineMetrics)
-	http.HandleFunc("/api/health", ws.metricsHandler.GetHealthStatus)
-	http.HandleFunc("/api/dashboard", ws.metricsHandler.GetDashboardData)
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static/"))))
 
-	// Web UI routes
-	http.HandleFunc("/", ws.serveHome)
-	http.HandleFunc("/jobs", ws.serveJobsPage)
-	http.HandleFunc("/jobs/", ws.serveJobDetailPage)
+	mux.HandleFunc("/api/jobs", middlewares.WrapHandler(ws.jobHandler.ListJobs))
+	mux.HandleFunc("/api/jobs/", middlewares.WrapHandler(ws.handleJobsAPI))
+	mux.HandleFunc("/api/companies", middlewares.WrapHandler(ws.companyHandler.ListCompanies))
+	mux.HandleFunc("/api/companies/", middlewares.WrapHandler(ws.handleCompaniesAPI))
+	mux.HandleFunc("/api/metrics", middlewares.WrapHandler(ws.metricsHandler.GetPipelineMetrics))
+	mux.HandleFunc("/api/health", middlewares.WrapHandler(ws.metricsHandler.GetHealthStatus))
+	mux.HandleFunc("/api/dashboard", middlewares.WrapHandler(ws.metricsHandler.GetDashboardData))
+
+	mux.HandleFunc("/", middlewares.WrapHandler(ws.serveHome))
+	mux.HandleFunc("/jobs", middlewares.WrapHandler(ws.serveJobsPage))
+	mux.HandleFunc("/jobs/", middlewares.WrapHandler(ws.serveJobDetailPage))
+
+	// Set the custom mux as the default handler
+	http.Handle("/", mux)
 }
 
 func loadTemplates() (*template.Template, error) {
