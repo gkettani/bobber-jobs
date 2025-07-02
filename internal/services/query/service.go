@@ -27,8 +27,18 @@ func NewJobQueryService() services.JobQueryService {
 
 // GetJobs retrieves jobs with filtering and pagination
 func (s *jobQueryService) GetJobs(ctx context.Context, filters *models.JobFilters, pagination *models.Pagination) (*models.JobList, error) {
-	// Build the WHERE clause
+	if filters.Search != "" {
+		return s.SearchJobs(ctx, filters.Search, pagination)
+	}
+
+	// Build the WHERE clause for non-search filtering
 	whereClause, args := s.buildWhereClause(filters)
+
+	if whereClause == "" {
+		whereClause = "WHERE expired_at IS NULL"
+	} else {
+		whereClause += " AND expired_at IS NULL"
+	}
 
 	// Count total jobs matching the filters
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM jobs %s", whereClause)
@@ -86,37 +96,47 @@ func (s *jobQueryService) GetJobByID(ctx context.Context, id int64) (*models.Job
 	return &job, nil
 }
 
-// SearchJobs performs full-text search on jobs
+// SearchJobs performs optimized full-text search on jobs
 func (s *jobQueryService) SearchJobs(ctx context.Context, searchQuery string, pagination *models.Pagination) (*models.JobList, error) {
 	if searchQuery == "" {
 		return s.GetJobs(ctx, &models.JobFilters{}, pagination)
 	}
 
-	// Count total jobs matching the search
-	countQuery := `
-		SELECT COUNT(*) FROM jobs 
-		WHERE search_vector @@ plainto_tsquery('english', $1)
+	// Use the optimized search function for better performance
+	query := `
+		SELECT id, company_name, title, location, first_seen_at, rank, total_count
+		FROM search_jobs_optimized($1, $2, $3)
 	`
-	var total int64
-	err := s.db.GetContext(ctx, &total, countQuery, searchQuery)
-	if err != nil {
-		return nil, fmt.Errorf("failed to count search results: %w", err)
+
+	type SearchResult struct {
+		ID          int64     `db:"id"`
+		CompanyName string    `db:"company_name"`
+		Title       string    `db:"title"`
+		Location    string    `db:"location"`
+		FirstSeenAt time.Time `db:"first_seen_at"`
+		Rank        float64   `db:"rank"`
+		TotalCount  int64     `db:"total_count"`
 	}
 
-	// Get the jobs with search ranking
-	query := `
-		SELECT id, company_name, title, location, first_seen_at,
-		       ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
-		FROM jobs 
-		WHERE search_vector @@ plainto_tsquery('english', $1)
-		ORDER BY rank DESC, last_seen_at DESC
-		LIMIT $2 OFFSET $3
-	`
-
-	var jobs []*models.LightJobDetails
-	err = s.db.SelectContext(ctx, &jobs, query, searchQuery, pagination.PageSize, pagination.Offset)
+	var results []SearchResult
+	err := s.db.SelectContext(ctx, &results, query, searchQuery, pagination.PageSize, pagination.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search jobs: %w", err)
+	}
+
+	// Convert to LightJobDetails
+	var jobs []*models.LightJobDetails
+	var total int64 = 0
+
+	for _, result := range results {
+		jobs = append(jobs, &models.LightJobDetails{
+			Id:          result.ID,
+			CompanyName: result.CompanyName,
+			Title:       result.Title,
+			Location:    result.Location,
+			FirstSeenAt: result.FirstSeenAt,
+		})
+		total = result.TotalCount // All rows have the same total count
 	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(pagination.PageSize)))
@@ -130,8 +150,9 @@ func (s *jobQueryService) SearchJobs(ctx context.Context, searchQuery string, pa
 	}, nil
 }
 
-// GetCompanyStats retrieves statistics for all companies
+// GetCompanyStats retrieves statistics for all companies (optimized)
 func (s *jobQueryService) GetCompanyStats(ctx context.Context) ([]models.CompanyStats, error) {
+	// Optimized query focusing on active jobs with better performance
 	query := `
 		SELECT 
 			company_name,
@@ -141,7 +162,7 @@ func (s *jobQueryService) GetCompanyStats(ctx context.Context) ([]models.Company
 			COUNT(CASE WHEN expired_at IS NOT NULL THEN 1 END) as expired_jobs
 		FROM jobs 
 		GROUP BY company_name
-		ORDER BY job_count DESC
+		ORDER BY active_jobs DESC, job_count DESC
 	`
 
 	var stats []models.CompanyStats
@@ -158,6 +179,7 @@ func (s *jobQueryService) GetJobCountByCompany(ctx context.Context) (map[string]
 	query := `
 		SELECT company_name, COUNT(*) as count
 		FROM jobs 
+		WHERE expired_at IS NULL
 		GROUP BY company_name
 	`
 
@@ -180,10 +202,10 @@ func (s *jobQueryService) GetJobCountByCompany(ctx context.Context) (map[string]
 	return counts, nil
 }
 
-// GetTotalJobCount returns the total number of jobs in the database
+// GetTotalJobCount returns the total number of active jobs
 func (s *jobQueryService) GetTotalJobCount(ctx context.Context) (int64, error) {
 	var count int64
-	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM jobs")
+	err := s.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM jobs WHERE expired_at IS NULL")
 	if err != nil {
 		return 0, fmt.Errorf("failed to get total job count: %w", err)
 	}
@@ -193,9 +215,9 @@ func (s *jobQueryService) GetTotalJobCount(ctx context.Context) (int64, error) {
 // GetRecentJobs returns the most recently discovered jobs
 func (s *jobQueryService) GetRecentJobs(ctx context.Context, limit int) ([]*models.LightJobDetails, error) {
 	query := `
-		SELECT id, company_name, title, location,
-		       first_seen_at
+		SELECT id, company_name, title, location, first_seen_at
 		FROM jobs 
+		WHERE expired_at IS NULL
 		ORDER BY first_seen_at DESC
 		LIMIT $1
 	`
@@ -247,12 +269,6 @@ func (s *jobQueryService) buildWhereClause(filters *models.JobFilters) (string, 
 			args = append(args, dateTo.Add(24*time.Hour)) // Include the entire day
 			argIndex++
 		}
-	}
-
-	if filters.Search != "" {
-		conditions = append(conditions, fmt.Sprintf("search_vector @@ plainto_tsquery('english', $%d)", argIndex))
-		args = append(args, filters.Search)
-		argIndex++
 	}
 
 	if len(conditions) == 0 {
