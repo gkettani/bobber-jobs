@@ -170,10 +170,104 @@ body {
   border-color: var(--focus-color);
 }
 
+/* Search Tips */
+.search-tips {
+  margin-top: 24px;
+  padding: 20px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.search-tips h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.tips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tip-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px;
+  background-color: var(--primary-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.tip-example {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #e2e8f0;
+  color: var(--secondary-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.tip-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Search Tips for Jobs Page (Inline) */
+.search-tips.jobs-page-tips {
+  margin-top: 8px;
+  padding: 8px 0;
+  background-color: transparent;
+  border: none;
+  width: 100%;
+  border-radius: 0;
+}
+
+.tips-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.tips-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 8px;
+}
+
+.tip-inline {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tip-inline code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  background-color: #e2e8f0;
+  color: var(--secondary-color);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
 /* Home Page */
 .home-page {
-  min-height: 80vh;
+  min-height: 93vh;
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -214,6 +308,17 @@ body {
 .jobs-header {
   padding: 20px 0;
   border-bottom: 1px solid var(--border-color);
+}
+
+.jobs-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.jobs-title-section {
+  flex: 1;
 }
 
 .jobs-title {
@@ -280,6 +385,38 @@ body {
 .job-date {
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+.job-description {
+  background: var(--hover-color);
+  border-radius: 12px;
+  padding: 30px;
+  line-height: 1.8;
+}
+
+.job-description h1,
+.job-description h2,
+.job-description h3 {
+  color: var(--secondary-color);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin-bottom: 16px;
+  margin-top: 24px;
+}
+
+.job-description h1:first-child,
+.job-description h2:first-child,
+.job-description h3:first-child {
+  margin-top: 0;
+}
+
+.job-description ul,
+.job-description ol {
+  margin-left: 20px;
+  margin-bottom: 16px;
+}
+
+.job-description p {
+  margin-bottom: 16px;
 }
 
 /* Pagination */
@@ -365,36 +502,37 @@ body {
   font-size: 14px;
 }
 
-.job-description {
-  background: var(--hover-color);
-  border-radius: 12px;
-  padding: 30px;
-  line-height: 1.8;
-}
-
-.job-description h1,
-.job-description h2,
-.job-description h3 {
-  color: var(--secondary-color);
+/* Footer */
+.footer {
+  padding: 20px 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 300;
+  width: 100%;
   font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  margin-bottom: 16px;
-  margin-top: 24px;
 }
 
-.job-description h1:first-child,
-.job-description h2:first-child,
-.job-description h3:first-child {
-  margin-top: 0;
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.job-description ul,
-.job-description ol {
-  margin-left: 20px;
-  margin-bottom: 16px;
+.links {
+  display: flex;
+  gap: 50px;
 }
 
-.job-description p {
-  margin-bottom: 16px;
+.links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.2s ease;
+  font-weight: 300;
+}
+
+.links a:hover {
+  color: var(--focus-color);
 }
 
 /* Loading States */
@@ -491,5 +629,39 @@ body {
 
   .all-jobs-button {
     display: none;
+  }
+
+  /* Search Tips Responsive */
+  .search-tips {
+    margin-top: 20px;
+    padding: 16px;
+  }
+
+  .tips-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .tip-item {
+    padding: 8px;
+  }
+
+  .tip-example {
+    font-size: 12px;
+  }
+
+  .tip-description {
+    font-size: 11px;
+  }
+
+  /* Jobs Page Tips */
+  .tips-inline {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .tips-title {
+    margin-bottom: 4px;
   }
 } 

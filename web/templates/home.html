@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bobber - Find Your Next Job</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/webp" href="/static/assets/bobber.webp">
     <link rel="shortcut icon" type="image/webp" href="/static/assets/bobber.webp">
@@ -17,10 +17,10 @@
         <div class="home-logo">
             <img src="/static/assets/bobber.webp" alt="Bobber Logo">
         </div>
-        
+
         <h1 class="home-title">Job search made <span class="home-title-highlight">fast</span></h1>
         <p class="home-subtitle">Effortlessly find your next career opportunity across 10,000+ top tech jobs</p>
-        
+
         <div class="search-container">
             <input 
                 type="text" 
@@ -31,8 +31,45 @@
             >
             <div id="search-results" class="search-results"></div>
         </div>
+
+        <!-- Search Tips -->
+        <div class="search-tips">
+            <h3>💡 Search Tips</h3>
+            <div class="tips-grid">
+                <div class="tip-item">
+                    <span class="tip-example">+required</span>
+                    <span class="tip-description">Must include this word</span>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-example">-exclude</span>
+                    <span class="tip-description">Exclude this word</span>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-example">"exact phrase"</span>
+                    <span class="tip-description">Search for exact phrase</span>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-example">python OR java</span>
+                    <span class="tip-description">Either term</span>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="copyright">
+                <p>&copy; 2025 Bobber - Ghali Kettani.</p>
+            </div>
+            <div class="links">
+                <a href="/">Home</a>
+                <a href="/jobs">All jobs</a>
+                <a href="https://github.com/gkettani/bobber-jobs" target="_blank">Star on GitHub</a>
+            </div>
+        </div>
+    </footer>
+
     <script src="/static/js/app.js"></script>
 </body>
 </html> 

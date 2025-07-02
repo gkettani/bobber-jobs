@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jobs - Bobber</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/webp" href="/static/assets/bobber.webp">
     <link rel="shortcut icon" type="image/webp" href="/static/assets/bobber.webp">
     <link rel="apple-touch-icon" href="/static/assets/bobber.webp">
-    
+
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -18,7 +18,7 @@
             <a href="/" class="logo">
                 <img src="/static/assets/bobber.webp" alt="Bobber Logo">
             </a>
-            
+
             <div class="search-container">
                 <input 
                     type="text" 
@@ -32,6 +32,19 @@
 
             <!-- all jobs button -->
             <a href="/jobs" class="all-jobs-button">All Jobs</a>
+        </div>
+
+        <!-- Search Tips for Jobs Page -->
+        <div class="container">
+            <div class="search-tips jobs-page-tips">
+                <div class="tips-inline">
+                    <span class="tips-title">💡 Tips:</span>
+                    <span class="tip-inline"><code>+required</code> must include</span>
+                    <span class="tip-inline"><code>-exclude</code> exclude word</span>
+                    <span class="tip-inline"><code>"exact phrase"</code> exact match</span>
+                    <span class="tip-inline"><code>python OR java</code> either term</span>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -49,7 +62,21 @@
 
         <nav id="pagination" class="pagination"></nav>
     </main>
-    
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="copyright">
+                <p>&copy; 2025 Bobber - Ghali Kettani.</p>
+            </div>
+            <div class="links">
+                <a href="/">Home</a>
+                <a href="/jobs">All jobs</a>
+                <a href="https://github.com/gkettani/bobber-jobs" target="_blank">Star on GitHub</a>
+            </div>
+        </div>
+    </footer>
+
     <script src="/static/js/app.js"></script>
 </body>
 </html> 
