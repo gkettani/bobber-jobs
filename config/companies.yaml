@@ -154,6 +154,13 @@ companies:
     id_pattern: "/job/(R-\\d+)/"
     enabled: false
 
+  meta:
+    name: "Meta"
+    fetch_type: "sitemap"
+    url: "https://www.metacareers.com/jobs/sitemap.xml"
+    id_pattern: "jobs/([0-9]+)"
+    enabled: true
+
   mistral:
     name: "Mistral"
     fetch_type: "html"

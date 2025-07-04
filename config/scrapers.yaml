@@ -134,6 +134,15 @@ scrapers:
       description: "[class='section-wrapper page-full-width']"
     enabled: true
 
+  meta:
+    name: "Meta"
+    url_patterns: ["meta"]
+    selectors:
+      title: "._army"
+      location: "#locations"
+      description: "#careersContentContainer > div > div:nth-child(2)"
+    enabled: true
+
   mistral:
     name: "Mistral"
     url_patterns: ["mistral"]
