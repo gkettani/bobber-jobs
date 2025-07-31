@@ -2,9 +2,6 @@
 
 Automated job processing pipeline that discovers, scrapes, and stores job postings from company career pages.
 
-## Live project
-
-Check live app at: https://bobber-the-swe.fly.dev/
 
 ## ⚠️ Disclaimer
 
